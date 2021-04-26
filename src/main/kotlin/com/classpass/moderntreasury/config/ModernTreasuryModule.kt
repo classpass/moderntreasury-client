@@ -6,18 +6,15 @@ import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
 import org.asynchttpclient.Dsl
-import org.asynchttpclient.Realm
 
-class ModernTreasuryModule : AbstractModule() {
-    override fun configure() {}
+class ModernTreasuryModule(private val config: ModernTreasuryConfig) : AbstractModule() {
 
     @Provides
     @Singleton
     fun providesInventoryServiceClient(
-        config: ModernTreasuryConfig
     ): ModernTreasuryClient {
         val clientConfig = Dsl.config()
-            .setRealm(Dsl.basicAuthRealm(config.organizationId, config.apiKey))
+            .setRealm(Dsl.basicAuthRealm(config.organizationId, config.apiKey).setUsePreemptiveAuth(true))
             .setConnectTimeout(config.connectTimeoutMs)
             .setReadTimeout(config.readTimeoutMs)
             .setRequestTimeout(config.requestTimeoutMs)
