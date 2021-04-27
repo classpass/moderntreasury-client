@@ -10,9 +10,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.asynchttpclient.AsyncHttpClient
 import org.asynchttpclient.BoundRequestBuilder
+import java.io.Closeable
 import java.util.concurrent.CompletableFuture
 
-interface ModernTreasuryClient {
+interface ModernTreasuryClient : Closeable {
     fun ping(): CompletableFuture<Void>
 }
 
@@ -46,5 +47,12 @@ internal class AsyncModernTreasuryClient(
             .deserialize2xx(objectReader) {
                 throw BadResponseException(it)
             }
+    }
+
+    /**
+     * Closes the underlying AsyncHttpClient, making this ModernTreasuryClient unusable.
+     */
+    override fun close() {
+        httpClient.close()
     }
 }
