@@ -67,3 +67,28 @@ task("sandbox-test", JavaExec::class) {
 application {
     mainClassName = "MainKt"
 }
+apply(plugin = "maven-publish")
+
+group = "com.classpass.moderntreasury-client"
+
+java {
+    withSourcesJar()
+}
+
+configure<PublishingExtension> {
+    findProperty("com.classpass.jenkins.localRepo")?.toString()?.let { localRepoPath ->
+        publications {
+            create<MavenPublication>("mavenJava") {
+                from(components["java"])
+            }
+        }
+
+    // if we're publishing artifacts, add the repo to write to
+        repositories {
+            maven {
+                name = "jenkinsLocal"
+                url = uri(localRepoPath)
+            }
+        }
+    }
+}
