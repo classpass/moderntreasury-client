@@ -6,7 +6,7 @@ plugins {
     id("org.jmailen.kotlinter") version "3.4.0"
 }
 
-group = "me.user"
+group = "com.classpass.moderntreasury-client"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -68,8 +68,6 @@ application {
     mainClassName = "MainKt"
 }
 apply(plugin = "maven-publish")
-
-group = "com.classpass.moderntreasury-client"
 
 java {
     withSourcesJar()
