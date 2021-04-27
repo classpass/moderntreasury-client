@@ -11,8 +11,7 @@ class ModernTreasuryModule(private val config: ModernTreasuryConfig) : AbstractM
 
     @Provides
     @Singleton
-    fun providesInventoryServiceClient(
-    ): ModernTreasuryClient {
+    fun providesInventoryServiceClient(): ModernTreasuryClient {
         val clientConfig = Dsl.config()
             .setRealm(Dsl.basicAuthRealm(config.organizationId, config.apiKey).setUsePreemptiveAuth(true))
             .setConnectTimeout(config.connectTimeoutMs)

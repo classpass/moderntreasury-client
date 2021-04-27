@@ -1,14 +1,12 @@
 package com.classpass.moderntreasury.config
 
-import java.time.Duration
-
 class ModernTreasuryConfig(
-     val organizationId: String,
-     val apiKey: String,
-     val baseUrl: String = DEFAULT_BASE_URL,
-     val connectTimeoutMs: Int = DEFAULT_CONNECT_TIMEOUT,
-     val readTimeoutMs: Int = DEFAULT_READ_TIMEOUT,
-     val requestTimeoutMs: Int = DEFAULT_REQUEST_TIMEOUT
+    val organizationId: String,
+    val apiKey: String,
+    val baseUrl: String = DEFAULT_BASE_URL,
+    val connectTimeoutMs: Int = DEFAULT_CONNECT_TIMEOUT,
+    val readTimeoutMs: Int = DEFAULT_READ_TIMEOUT,
+    val requestTimeoutMs: Int = DEFAULT_REQUEST_TIMEOUT
 )
 private const val DEFAULT_BASE_URL = "https://app.moderntreasury.com/api"
 private const val DEFAULT_CONNECT_TIMEOUT = 1000

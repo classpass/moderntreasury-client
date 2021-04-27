@@ -19,7 +19,7 @@ interface ModernTreasuryClient {
 internal class AsyncModernTreasuryClient(
     private val baseUrl: String,
     private val httpClient: AsyncHttpClient,
-): ModernTreasuryClient {
+) : ModernTreasuryClient {
     private val objectMapper: ObjectMapper = JsonMapper.builder()
         .addModules(KotlinModule(), JavaTimeModule())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -27,7 +27,7 @@ internal class AsyncModernTreasuryClient(
         .build()
     private val objectReader = objectMapper.reader()
 
-    override fun ping():CompletableFuture<Void> {
+    override fun ping(): CompletableFuture<Void> {
         return get<Void, Void>("/ping")
     }
 

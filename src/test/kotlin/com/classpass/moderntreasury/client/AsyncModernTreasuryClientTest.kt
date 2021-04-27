@@ -4,17 +4,19 @@ import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.classpass.moderntreasury.config.ModernTreasuryModule
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.BasicCredentials
-import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.configureFor
+import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
+import com.github.tomakehurst.wiremock.client.WireMock.stubFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.verify
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.google.inject.Guice
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
-
-import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 
 private const val ORG_ID = "org_id"
@@ -39,14 +41,12 @@ class AsyncModernTreasuryClientTest {
     @BeforeEach
     fun setup() {
         wireMockServer.resetAll()
-
     }
 
     @AfterAll
     fun afterAll() {
         wireMockServer.stop()
     }
-
 
     @Test
     fun `verify basic auth is on the request`() {
@@ -64,5 +64,4 @@ class AsyncModernTreasuryClientTest {
         val expectedCredentials = BasicCredentials(ORG_ID, API_KEY)
         verify(getRequestedFor(urlEqualTo("/ping")).withBasicAuth(expectedCredentials))
     }
-
 }
