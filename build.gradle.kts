@@ -6,7 +6,7 @@ plugins {
     id("org.jmailen.kotlinter") version "3.4.0"
 }
 
-group = "com.classpass.moderntreasury-client"
+group = "com.classpass.moderntreasury"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -77,6 +77,7 @@ configure<PublishingExtension> {
     findProperty("com.classpass.jenkins.localRepo")?.toString()?.let { localRepoPath ->
         publications {
             create<MavenPublication>("mavenJava") {
+                artifactId = "client"
                 from(components["java"])
             }
         }
