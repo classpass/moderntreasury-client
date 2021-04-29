@@ -1,10 +1,10 @@
 # Modern Treasury Client
 
-This is a JVM client for the [Modern Treasury API](https://docs.moderntreasury.com/reference)
+This is a JVM client for the [Modern Treasury API](https://docs.moderntreasury.com/reference)  
 [Link to technical design doc](https://docs.google.com/document/d/1jRiC7TdkA88_Wto7dya_EP4Ok6S7McJbvGh6JYIRB6g/edit#)
 
 ## Technologies
-**Languages:** Kotlin
+**Languages:** Kotlin  
 **Runtime version:** Kotlin 1.4
 
 ### Usage
@@ -36,6 +36,6 @@ To run all tests, execute:
 ```
 
 ## Ownership
-**Squad:** Plans And Payments
-**Slack:** [squad-plans-payments](https://classpass.slack.com/archives/CFW7SMMQF)
-**Jira:** [FIN Jira project](https://classpass.atlassian.net/jira/software/c/projects/FIN/issues/)
+**Squad:** Plans And Payments  
+**Slack:** [squad-plans-payments](https://classpass.slack.com/archives/CFW7SMMQF)  
+**Jira:** [FIN Jira project](https://classpass.atlassian.net/jira/software/c/projects/FIN/issues/)  

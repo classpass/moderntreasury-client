@@ -6,7 +6,7 @@ plugins {
     id("org.jmailen.kotlinter") version "3.4.0"
 }
 
-group = "me.user"
+group = "com.classpass.moderntreasury"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -66,4 +66,28 @@ task("sandbox-test", JavaExec::class) {
 
 application {
     mainClassName = "MainKt"
+}
+apply(plugin = "maven-publish")
+
+java {
+    withSourcesJar()
+}
+
+configure<PublishingExtension> {
+    findProperty("com.classpass.jenkins.localRepo")?.toString()?.let { localRepoPath ->
+        publications {
+            create<MavenPublication>("mavenJava") {
+                artifactId = "client"
+                from(components["java"])
+            }
+        }
+
+    // if we're publishing artifacts, add the repo to write to
+        repositories {
+            maven {
+                name = "jenkinsLocal"
+                url = uri(localRepoPath)
+            }
+        }
+    }
 }
