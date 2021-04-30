@@ -25,7 +25,7 @@ class ModernTreasuryConfig(
     }
 }
 private const val DEFAULT_BASE_URL = "https://app.moderntreasury.com/api"
-private const val DEFAULT_CONNECT_TIMEOUT = 1000
-private const val DEFAULT_READ_TIMEOUT = 3000
-private const val DEFAULT_REQUEST_TIMEOUT = 3000
-private const val DEFAULT_RATE_LIMIT_TIMEOUT = 10000L // ten seconds
+private const val DEFAULT_CONNECT_TIMEOUT = 1_000
+private const val DEFAULT_READ_TIMEOUT = 3_000
+private const val DEFAULT_REQUEST_TIMEOUT = 3_000
+private const val DEFAULT_RATE_LIMIT_TIMEOUT = 10_000L
