@@ -3,6 +3,7 @@ package com.classpass.moderntreasury.client
 import com.classpass.clients.BadResponseException
 import com.classpass.clients.deserialize2xx
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
+import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -14,6 +15,7 @@ import org.asynchttpclient.AsyncHttpClient
 import org.asynchttpclient.BoundRequestBuilder
 import org.asynchttpclient.Dsl
 import java.io.Closeable
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 interface ModernTreasuryClient : Closeable {
@@ -24,6 +26,7 @@ internal class AsyncModernTreasuryClient(
     private val httpClient: AsyncHttpClient,
     private val baseUrl: String,
     private val rateLimiter: RateLimiter,
+    private val rateLimitTimeoutMs: Long
 ) : ModernTreasuryClient {
     companion object {
         fun create(config: ModernTreasuryConfig): AsyncModernTreasuryClient {
@@ -35,9 +38,10 @@ internal class AsyncModernTreasuryClient(
                 .build()
             val asyncHttpClient = Dsl.asyncHttpClient(clientConfig)
             val rateLimiter = RateLimiter.create(config.rateLimit)
-            return AsyncModernTreasuryClient(asyncHttpClient, config.baseUrl, rateLimiter)
+            return AsyncModernTreasuryClient(asyncHttpClient, config.baseUrl, rateLimiter, config.rateLimitTimeoutMs)
         }
     }
+
     private val objectMapper: ObjectMapper = JsonMapper.builder()
         .addModules(KotlinModule(), JavaTimeModule())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -58,13 +62,14 @@ internal class AsyncModernTreasuryClient(
     internal inline fun <reified T> executeRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
     ): CompletableFuture<T> =
-        CompletableFuture.runAsync {
-            rateLimiter.acquire()
+        CompletableFuture.supplyAsync {
+            if (!rateLimiter.tryAcquire(Duration.ofMillis(rateLimitTimeoutMs))) {
+                throw RateLimitTimeoutException(rateLimitTimeoutMs)
+            }
         }.thenCompose {
             val requestBuilder = block.invoke(httpClient)
-
             requestBuilder.execute()
-                .deserialize2xx(objectReader) {
+                .deserialize2xx<T>(objectReader) {
                     throw BadResponseException(it)
                 }
         }
