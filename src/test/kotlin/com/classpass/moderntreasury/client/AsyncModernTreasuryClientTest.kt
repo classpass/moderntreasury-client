@@ -4,15 +4,14 @@ import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.classpass.moderntreasury.config.ModernTreasuryModule
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.BasicCredentials
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.configureFor
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
+import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.google.inject.Guice
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -33,7 +32,7 @@ class AsyncModernTreasuryClientTest {
         wireMockServer.start()
         val baseUrl = "http://localhost:${wireMockServer.port()}"
         val config = ModernTreasuryConfig(ORG_ID, API_KEY, baseUrl)
-        client = Guice.createInjector(ModernTreasuryModule(config)).getInstance(ModernTreasuryClient::class.java)
+        client = ModernTreasuryModule(config).providesModernTreasuryClient()
 
         configureFor("localhost", wireMockServer.port())
     }
@@ -50,14 +49,7 @@ class AsyncModernTreasuryClientTest {
 
     @Test
     fun `verify basic auth is on the request`() {
-        stubFor(
-            get(urlEqualTo("/ping"))
-                .willReturn(
-                    aResponse()
-                        .withStatus(200)
-                        .withBody("""{"ping": "pong"}""")
-                )
-        )
+        stubFor(get(urlEqualTo("/ping")).willReturn(ok("""{"foo": "bar"}""")))
 
         client.ping().get()
 

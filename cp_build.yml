@@ -10,7 +10,7 @@ test:
       junit: "*/build/test-results/test/TEST-*.xml"
 
 build:
-  script: ./gradlew assemble
+  script: ./gradlew shadowJar
   docker: false
 
 publish:
