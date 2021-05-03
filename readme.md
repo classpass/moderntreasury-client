@@ -11,23 +11,9 @@ This is a JVM client for the [Modern Treasury API](https://docs.moderntreasury.c
 ## Authenticating
 To authenticate with Modern Treasury, provide the client with your api key's Organization Id and Secret.
 
-## Guice Setup
-The client comes with a guice module, which you can add to your application's own guice module like this:
-```
-    override fun configure() {
-        val config = ModernTreasuryConfig(
-            organizationId = ..., /* Your api key's organization id */
-            apiKey = ..., /* Your api key's secret */
-        install(ModernTreasuryModule(config))
-    }
-```
-
-From there you'll be able to access an instance of `ModernTreasuryClient` via injection.
-
-## Manual Setup
-Instantiate your own `AsyncModernTreasuryClient` by passing in an `AsyncHttpClient` configured to use your API key in 
-basic auth for all requests, and a base URL, typically `https://app.moderntreasury.com/api`. You should use a single
-instance of `AsyncModernTreasuryClient` for your entire application's lifecycle.
+## Setup
+Instantiate an `AsyncModernTreasuryClient` by calling the static `create` function with a config object. You should use 
+a single instance of `AsyncModernTreasuryClient` for your entire application's lifecycle.
 
 ### Testing
 To run all tests, execute:

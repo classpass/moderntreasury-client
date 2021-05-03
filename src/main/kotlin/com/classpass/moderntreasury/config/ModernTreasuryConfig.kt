@@ -9,20 +9,17 @@ class ModernTreasuryConfig(
     val requestTimeoutMs: Int = DEFAULT_REQUEST_TIMEOUT,
     /**
      * Sets a limit on how long to wait for the rate limiter before submitting a request. If a request cannot pass the
-     * rate limiter before rateLimitTimeoutMs will occur, the request will fail with a RateLimitTimeoutException.
+     * rate limiter before rateLimitTimeoutMs will occur, the request will fail with a RateLimitTimeoutException. This
+     * option has no effect if maxRequestsPerSecond is null.
      */
     val rateLimitTimeoutMs: Long = DEFAULT_RATE_LIMIT_TIMEOUT,
     /**
      * Limits the number of requests made per second to modern treasury. Requests made after the limit has been reached
-     * will be delayed. 0 for unlimited.
+     * will be delayed. null for no rate limiting. If set, must be positive.
      */
-    maxRequestsPerSecond: Int = 0
+    maxRequestsPerSecond: Int? = null
 ) {
-    val rateLimit = if (maxRequestsPerSecond < 1) {
-        Double.MAX_VALUE
-    } else {
-        maxRequestsPerSecond.toDouble()
-    }
+    val rateLimit = maxRequestsPerSecond?.toDouble() ?: Double.MAX_VALUE
 }
 private const val DEFAULT_BASE_URL = "https://app.moderntreasury.com/api"
 private const val DEFAULT_CONNECT_TIMEOUT = 1_000

@@ -36,7 +36,6 @@ dependencies {
     implementation("com.fasterxml.jackson.core", "jackson-databind", deps["jackson"])
     implementation("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310", deps["jackson"])
     implementation("com.fasterxml.jackson.module", "jackson-module-kotlin", deps["jackson"])
-    implementation("com.google.inject", "guice", "5.0.1")
     implementation("com.google.guava:guava:30.1.1-jre")
 
     testImplementation("com.classpass.jade", "test-support", deps["jade"])

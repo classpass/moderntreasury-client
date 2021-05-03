@@ -1,7 +1,6 @@
 package com.classpass.moderntreasury.client
 
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
-import com.classpass.moderntreasury.config.ModernTreasuryModule
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.BasicCredentials
 import com.github.tomakehurst.wiremock.client.WireMock.configureFor
@@ -32,7 +31,7 @@ class AsyncModernTreasuryClientTest {
         wireMockServer.start()
         val baseUrl = "http://localhost:${wireMockServer.port()}"
         val config = ModernTreasuryConfig(ORG_ID, API_KEY, baseUrl)
-        client = ModernTreasuryModule(config).providesModernTreasuryClient()
+        client = AsyncModernTreasuryClient.create(config)
 
         configureFor("localhost", wireMockServer.port())
     }
