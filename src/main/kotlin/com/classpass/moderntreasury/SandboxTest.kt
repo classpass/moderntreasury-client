@@ -2,10 +2,8 @@
 
 package com.classpass.moderntreasury
 
-import com.classpass.moderntreasury.client.ModernTreasuryClient
+import com.classpass.moderntreasury.client.AsyncModernTreasuryClient
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
-import com.classpass.moderntreasury.config.ModernTreasuryModule
-import com.google.inject.Guice
 
 /**
  * This main method will ping the actual modern treasury api and then exit. Used as a sanity check to make sure
@@ -14,7 +12,7 @@ import com.google.inject.Guice
  */
 fun main(args: Array<String>) {
     val config = ModernTreasuryConfig(args[0], args[1], args[2])
-    Guice.createInjector(ModernTreasuryModule(config)).getInstance(ModernTreasuryClient::class.java).use { client ->
+    AsyncModernTreasuryClient.create(config).use { client ->
         client.ping().get()
     }
 }
