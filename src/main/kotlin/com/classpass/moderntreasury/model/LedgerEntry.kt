@@ -1,7 +1,7 @@
 package com.classpass.moderntreasury.model
 
 /**
- * A LedgerEntry represents an accounting entry within a parent ledger transaction. Its amount is denominated in the
+ * A LedgerEntry represents an accounting entry within a parent LedgerTransaction. Its amount is denominated in the
  * currency of the ledger it belongs to.
  */
 data class LedgerEntry(
