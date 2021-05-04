@@ -46,6 +46,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:${deps["junit"]}")
     testImplementation("org.mockito.kotlin:mockito-kotlin:3.1.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${deps["junit"]}")
+    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.23.1")
 
     implementation("org.slf4j:slf4j-api:1.7.30")
     implementation("ch.qos.logback:logback-classic:1.2.3")
