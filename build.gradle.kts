@@ -8,7 +8,6 @@ plugins {
 }
 
 group = "com.classpass.moderntreasury"
-version = "1.0-SNAPSHOT"
 
 repositories {
     maven {
