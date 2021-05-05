@@ -31,7 +31,7 @@ class AsyncModernTreasuryClientTest {
         wireMockServer.start()
         val baseUrl = "http://localhost:${wireMockServer.port()}"
         val config = ModernTreasuryConfig(ORG_ID, API_KEY, baseUrl)
-        client = AsyncModernTreasuryClient.create(config)
+        client = asyncModernTreasuryClient(config)
 
         configureFor("localhost", wireMockServer.port())
     }

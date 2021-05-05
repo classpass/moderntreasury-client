@@ -22,7 +22,13 @@ interface ModernTreasuryClient : Closeable {
     fun ping(): CompletableFuture<Void>
 }
 
-class AsyncModernTreasuryClient(
+/**
+ * Create a ModernTreasuryClient backed by an AsyncHttpClient. You should use a single instance of ModernTreasuryClient
+ * for your application's entire lifecycle
+ */
+fun asyncModernTreasuryClient(config: ModernTreasuryConfig): ModernTreasuryClient = AsyncModernTreasuryClient.create(config)
+
+internal class AsyncModernTreasuryClient(
     private val httpClient: AsyncHttpClient,
     private val baseUrl: String,
     private val rateLimiter: RateLimiter,
