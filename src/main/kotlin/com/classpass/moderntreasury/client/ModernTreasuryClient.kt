@@ -22,7 +22,7 @@ interface ModernTreasuryClient : Closeable {
     fun ping(): CompletableFuture<Void>
 }
 
-internal class AsyncModernTreasuryClient(
+class AsyncModernTreasuryClient(
     private val httpClient: AsyncHttpClient,
     private val baseUrl: String,
     private val rateLimiter: RateLimiter,
