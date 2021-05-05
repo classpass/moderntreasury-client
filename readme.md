@@ -22,7 +22,7 @@ To run all tests, execute:
 ```
 
 ## Creating a release
-Checkout the latest main.
+Merge your changes to main. Checkout the latest main locally.
 Make a tag: `git tag -am "1.0.3" 1.0.3`
 Push the tag: `git push --tags`
 
