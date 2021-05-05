@@ -21,6 +21,11 @@ To run all tests, execute:
 ./gradlew test
 ```
 
+## Creating a release
+Checkout the latest main.
+Make a tag: `git tag -am "1.0.3" 1.0.3`
+Push the tag: `git push --tags`
+
 ## Ownership
 **Squad:** Plans And Payments  
 **Slack:** [squad-plans-payments](https://classpass.slack.com/archives/CFW7SMMQF)  
