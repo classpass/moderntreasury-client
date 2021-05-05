@@ -3,7 +3,7 @@ package com.classpass.moderntreasury.model
 data class CreateLedgerAccountRequest(
     val name: String,
     val description: String?,
-    val normalBalanceType: NormalBalanceType,
+    val normalBalance: NormalBalanceType,
     val ledgerId: String,
-    val metadata: Map<String, String>
+    val metadata: Map<String, String> = emptyMap()
 )
