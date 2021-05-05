@@ -12,8 +12,8 @@ This is a JVM client for the [Modern Treasury API](https://docs.moderntreasury.c
 To authenticate with Modern Treasury, provide the client with your api key's Organization Id and Secret.
 
 ## Setup
-Instantiate an `AsyncModernTreasuryClient` by calling the static `create` function with a config object. You should use 
-a single instance of `AsyncModernTreasuryClient` for your entire application's lifecycle.
+Instantiate an `AsyncModernTreasuryClient` by calling the static `asyncModernTreasuryClient()` function with a config object. You should use 
+a single instance of `ModernTreasuryClient` for your entire application's lifecycle.
 
 ### Testing
 To run all tests, execute:
