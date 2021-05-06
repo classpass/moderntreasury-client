@@ -2,7 +2,7 @@ package com.classpass.moderntreasury.client
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import com.classpass.moderntreasury.model.CreateLedgerAccountRequest
+import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountBalanceItem

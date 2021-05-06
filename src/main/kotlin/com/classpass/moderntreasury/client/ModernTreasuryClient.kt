@@ -4,10 +4,14 @@ import com.classpass.clients.deserialize2xx
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.classpass.moderntreasury.exception.toModernTreasuryException
-import com.classpass.moderntreasury.model.CreateLedgerAccountRequest
+import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerTransaction
+import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
+import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
+import com.classpass.moderntreasury.model.request.RequestLedgerEntries
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -44,6 +48,66 @@ interface ModernTreasuryClient : Closeable {
          */
         asOfDate: LocalDate? = null
     ): CompletableFuture<LedgerAccountBalance>
+
+    fun getLedgerTransaction(
+        /**
+         * The ID of the ledger transaction
+         */
+        id: String
+    ): CompletableFuture<LedgerTransaction>
+
+    fun createLedgerTransaction(
+        effectiveDate: LocalDate,
+        ledgerEntries: List<RequestLedgerEntries>,
+        externalId: String,
+        description: String?,
+        status: LedgerTransactionStatus?,
+        metadata: Map<String, String> = emptyMap(),
+    ): CompletableFuture<LedgerTransaction> = createLedgerTransaction(
+            CreateLedgerTransactionRequest(effectiveDate, ledgerEntries, externalId, description, status, metadata)
+        )
+
+    fun createLedgerTransaction(
+        request: CreateLedgerTransactionRequest
+    ): CompletableFuture<LedgerTransaction>
+
+    /**
+     * Update a ledger transaction. Only pending ledger transactions can be updated.
+     */
+    fun updateLedgerTransaction(
+        /**
+         * The ID of the ledger transaction to update
+         */
+        id: String,
+        description: String?,
+        /**
+         * To post the ledger transaction, use POSTED. To archive a pending ledger transaction, use ARCHIVED.
+         */
+        status: LedgerTransactionStatus?,
+        /**
+         * Note that updating entries will overwrite any prior entries on the ledger transaction.
+         */
+        ledgerEntries: List<RequestLedgerEntries>? = null,
+        /**
+         * Additional metadata in the form of key-value pairs. Pairs can be removed by passing an empty string as the
+         * value.
+         */
+        metadata: Map<String, String> = emptyMap()
+    ): CompletableFuture<LedgerTransaction>
+
+    /**
+     * Set a pending ledger transaction's status to ARCHIVED, effectively a soft delete.
+     */
+    fun archiveLedgerTransaction(
+        /**
+         * The ID of the ledger transaction to archive
+         */
+        id: String,
+    ): CompletableFuture<LedgerTransaction> = updateLedgerTransaction(
+        id,
+        null,
+        LedgerTransactionStatus.ARCHIVED
+    )
 
     fun ping(): CompletableFuture<Map<String, String>>
 }
@@ -96,6 +160,24 @@ internal class AsyncModernTreasuryClient(
         } ?: emptyMap()
 
         return get("/ledger_accounts/$ledgerAccountId/balance", queryParams)
+    }
+
+    override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> {
+        TODO("Not yet implemented")
+    }
+
+    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> {
+        TODO("Not yet implemented")
+    }
+
+    override fun updateLedgerTransaction(
+        id: String,
+        description: String?,
+        status: LedgerTransactionStatus?,
+        ledgerEntries: List<RequestLedgerEntries>?,
+        metadata: Map<String, String>
+    ): CompletableFuture<LedgerTransaction> {
+        TODO("Not yet implemented")
     }
 
     override fun ping(): CompletableFuture<Map<String, String>> {

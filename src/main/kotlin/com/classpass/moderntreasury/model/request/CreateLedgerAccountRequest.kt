@@ -1,4 +1,6 @@
-package com.classpass.moderntreasury.model
+package com.classpass.moderntreasury.model.request
+
+import com.classpass.moderntreasury.model.NormalBalanceType
 
 data class CreateLedgerAccountRequest(
     val name: String,
