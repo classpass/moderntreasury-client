@@ -1,5 +1,7 @@
 package com.classpass.moderntreasury.model
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 /**
  * A LedgerAccount is an account in a double-entry accounting system. Common examples include asset, liability, expense,
  * and revenue accounts. Each LedgerAccount belongs to a Ledger and can only have entries with other accounts belonging
@@ -43,6 +45,6 @@ data class LedgerAccount(
  * balance. For example, liabilities accounts are credit normal whereas assets accounts are debit normal.
  */
 enum class NormalBalanceType {
-    CREDIT,
-    DEBIT
+    @JsonProperty("credit") CREDIT,
+    @JsonProperty("debit") DEBIT
 }

@@ -1,25 +1,51 @@
 package com.classpass.moderntreasury.client
 
-import com.classpass.clients.BadResponseException
 import com.classpass.clients.deserialize2xx
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.classpass.moderntreasury.exception.RateLimitTimeoutException
+import com.classpass.moderntreasury.exception.toModernTreasuryException
+import com.classpass.moderntreasury.model.CreateLedgerAccountRequest
+import com.classpass.moderntreasury.model.LedgerAccount
+import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.NormalBalanceType
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import com.google.common.util.concurrent.RateLimiter
 import org.asynchttpclient.AsyncHttpClient
 import org.asynchttpclient.BoundRequestBuilder
 import org.asynchttpclient.Dsl
 import java.io.Closeable
 import java.time.Duration
+import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 
 interface ModernTreasuryClient : Closeable {
-    fun ping(): CompletableFuture<Void>
+
+    fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount>
+
+    fun createLedgerAccount(
+        name: String,
+        description: String?,
+        normalBalanceType: NormalBalanceType,
+        ledgerId: String,
+        metadata: Map<String, String> = emptyMap()
+    ) = createLedgerAccount(CreateLedgerAccountRequest(name, description, normalBalanceType, ledgerId, metadata))
+
+    fun getLedgerAccountBalance(
+        ledgerAccountId: String,
+        /**
+         * The date of the balance in local time. Defaults to today's date.
+         */
+        asOfDate: LocalDate? = null
+    ): CompletableFuture<LedgerAccountBalance>
+
+    fun ping(): CompletableFuture<Map<String, String>>
 }
 
 /**
@@ -51,34 +77,63 @@ internal class AsyncModernTreasuryClient(
     private val objectMapper: ObjectMapper = JsonMapper.builder()
         .addModules(KotlinModule(), JavaTimeModule())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
         .enable(MapperFeature.BLOCK_UNSAFE_POLYMORPHIC_BASE_TYPES)
         .build()
+
     private val objectReader = objectMapper.reader()
 
-    override fun ping(): CompletableFuture<Void> {
-        return get<Void, Void>("/ping")
+    override fun createLedgerAccount(
+        request: CreateLedgerAccountRequest
+    ): CompletableFuture<LedgerAccount> = post("/ledger_accounts", request)
+
+    override fun getLedgerAccountBalance(
+        ledgerAccountId: String,
+        asOfDate: LocalDate?
+    ): CompletableFuture<LedgerAccountBalance> {
+        val queryParams = asOfDate?.let {
+            mapOf("as_of_date" to listOf(it.toString()))
+        } ?: emptyMap()
+
+        return get("/ledger_accounts/$ledgerAccountId/balance", queryParams)
     }
 
-    private inline fun <T, reified R> get(
+    override fun ping(): CompletableFuture<Map<String, String>> {
+        return get("/ping")
+    }
+
+    private inline fun <reified R> get(
         endpoint: String,
+        queryParams: Map<String, List<String>> = emptyMap()
     ) = executeRequest<R> {
-        prepareGet("$baseUrl$endpoint")
+        prepareGet("$baseUrl$endpoint").setQueryParams(queryParams)
+    }
+
+    private inline fun <T, reified R> post(
+        endpoint: String,
+        requestBody: T
+    ) = executeRequest<R> {
+        preparePost("$baseUrl$endpoint")
+            .setBody(objectMapper.writeValueAsBytes(requestBody))
+            .addHeader("Content-Type", "application/json")
     }
 
     internal inline fun <reified T> executeRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
-    ): CompletableFuture<T> =
-        CompletableFuture.supplyAsync {
+    ): CompletableFuture<T> {
+        val typeRef = jacksonTypeRef<T>()
+        return CompletableFuture.supplyAsync {
             if (!rateLimiter.tryAcquire(Duration.ofMillis(rateLimitTimeoutMs))) {
                 throw RateLimitTimeoutException(rateLimitTimeoutMs)
             }
         }.thenCompose {
             val requestBuilder = block.invoke(httpClient)
             requestBuilder.execute()
-                .deserialize2xx<T>(objectReader) {
-                    throw BadResponseException(it)
+                .deserialize2xx(typeRef, objectReader) {
+                    throw it.toModernTreasuryException(objectReader)
                 }
         }
+    }
 
     /**
      * Closes the underlying AsyncHttpClient, making this ModernTreasuryClient unusable.
