@@ -4,18 +4,21 @@ import com.classpass.clients.deserialize2xx
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.classpass.moderntreasury.exception.toModernTreasuryException
-import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerTransaction
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
+import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
-import com.classpass.moderntreasury.model.request.RequestLedgerEntries
+import com.classpass.moderntreasury.model.request.RequestLedgerEntry
+import com.classpass.moderntreasury.model.request.RequestMetadata
+import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
@@ -38,7 +41,7 @@ interface ModernTreasuryClient : Closeable {
         description: String?,
         normalBalanceType: NormalBalanceType,
         ledgerId: String,
-        metadata: Map<String, String> = emptyMap()
+        metadata: RequestMetadata = emptyMap()
     ) = createLedgerAccount(CreateLedgerAccountRequest(name, description, normalBalanceType, ledgerId, metadata))
 
     fun getLedgerAccountBalance(
@@ -58,21 +61,22 @@ interface ModernTreasuryClient : Closeable {
 
     fun createLedgerTransaction(
         effectiveDate: LocalDate,
-        ledgerEntries: List<RequestLedgerEntries>,
+        ledgerEntries: List<RequestLedgerEntry>,
         externalId: String,
         description: String?,
         status: LedgerTransactionStatus?,
-        metadata: Map<String, String> = emptyMap(),
+        metadata: RequestMetadata = emptyMap(),
     ): CompletableFuture<LedgerTransaction> = createLedgerTransaction(
-            CreateLedgerTransactionRequest(effectiveDate, ledgerEntries, externalId, description, status, metadata)
-        )
+        CreateLedgerTransactionRequest(effectiveDate, ledgerEntries, externalId, description, status, metadata)
+    )
 
     fun createLedgerTransaction(
         request: CreateLedgerTransactionRequest
     ): CompletableFuture<LedgerTransaction>
 
     /**
-     * Update a ledger transaction. Only pending ledger transactions can be updated.
+     * Update a ledger transaction. Only pending ledger transactions can be updated. Returns the updated
+     * LedgerTransaction.
      */
     fun updateLedgerTransaction(
         /**
@@ -87,13 +91,16 @@ interface ModernTreasuryClient : Closeable {
         /**
          * Note that updating entries will overwrite any prior entries on the ledger transaction.
          */
-        ledgerEntries: List<RequestLedgerEntries>? = null,
-        /**
-         * Additional metadata in the form of key-value pairs. Pairs can be removed by passing an empty string as the
-         * value.
-         */
-        metadata: Map<String, String> = emptyMap()
-    ): CompletableFuture<LedgerTransaction>
+        ledgerEntries: List<RequestLedgerEntry>? = null,
+        metadata: RequestMetadata = emptyMap()
+    ): CompletableFuture<LedgerTransaction> =
+        updateLedgerTransaction(UpdateLedgerTransactionRequest(id, description, status, ledgerEntries, metadata))
+
+    /**
+     * Update a ledger transaction. Only pending ledger transactions can be updated. Returns the updated
+     * LedgerTransaction.
+     */
+    fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction>
 
     /**
      * Set a pending ledger transaction's status to ARCHIVED, effectively a soft delete.
@@ -119,7 +126,7 @@ interface ModernTreasuryClient : Closeable {
 fun asyncModernTreasuryClient(config: ModernTreasuryConfig): ModernTreasuryClient = AsyncModernTreasuryClient.create(config)
 
 internal class AsyncModernTreasuryClient(
-    private val httpClient: AsyncHttpClient,
+    internal val httpClient: AsyncHttpClient,
     private val baseUrl: String,
     private val rateLimiter: RateLimiter,
     private val rateLimitTimeoutMs: Long
@@ -141,6 +148,7 @@ internal class AsyncModernTreasuryClient(
     private val objectMapper: ObjectMapper = JsonMapper.builder()
         .addModules(KotlinModule(), JavaTimeModule())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
         .enable(MapperFeature.BLOCK_UNSAFE_POLYMORPHIC_BASE_TYPES)
         .build()
@@ -162,23 +170,14 @@ internal class AsyncModernTreasuryClient(
         return get("/ledger_accounts/$ledgerAccountId/balance", queryParams)
     }
 
-    override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> {
-        TODO("Not yet implemented")
-    }
+    override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> =
+        get("/ledger_transactions/id")
 
-    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> {
-        TODO("Not yet implemented")
-    }
+    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
+        post("/ledger_transactions", request)
 
-    override fun updateLedgerTransaction(
-        id: String,
-        description: String?,
-        status: LedgerTransactionStatus?,
-        ledgerEntries: List<RequestLedgerEntries>?,
-        metadata: Map<String, String>
-    ): CompletableFuture<LedgerTransaction> {
-        TODO("Not yet implemented")
-    }
+    override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
+        patch("/ledger_transactions/${request.id}", request)
 
     override fun ping(): CompletableFuture<Map<String, String>> {
         return get("/ping")
@@ -196,6 +195,15 @@ internal class AsyncModernTreasuryClient(
         requestBody: T
     ) = executeRequest<R> {
         preparePost("$baseUrl$endpoint")
+            .setBody(objectMapper.writeValueAsBytes(requestBody))
+            .addHeader("Content-Type", "application/json")
+    }
+
+    private inline fun <T, reified R> patch(
+        endpoint: String,
+        requestBody: T
+    ) = executeRequest<R> {
+        preparePatch("$baseUrl$endpoint")
             .setBody(objectMapper.writeValueAsBytes(requestBody))
             .addHeader("Content-Type", "application/json")
     }

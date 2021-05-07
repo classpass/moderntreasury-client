@@ -5,10 +5,9 @@ import java.time.LocalDate
 
 data class CreateLedgerTransactionRequest(
     val effectiveDate: LocalDate,
-    val ledgerEntries: List<RequestLedgerEntries>,
+    val ledgerEntries: List<RequestLedgerEntry>,
     val externalId: String,
     val description: String?,
     val status: LedgerTransactionStatus?,
-    val metadata: Map<String, String> = emptyMap(),
-) {
-}
+    val metadata: RequestMetadata = emptyMap(),
+)

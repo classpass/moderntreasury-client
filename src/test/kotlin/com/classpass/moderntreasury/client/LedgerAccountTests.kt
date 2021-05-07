@@ -2,11 +2,11 @@ package com.classpass.moderntreasury.client
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountBalanceItem
 import com.classpass.moderntreasury.model.NormalBalanceType
+import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.ok
@@ -53,10 +53,10 @@ class LedgerAccountTests : WireMockClientTest() {
     fun `createLedgerAccount makes a well-formatted request body and deserializes responses properly`() {
         val response = """
             {
-                "id": "f1c7e474-e6d5-4741-9f76-04510c8b6d7a",
+                "id": "f1c7-xxxxx",
                 "object": "ledger_account",
                 "name": "Operating Bank Account",
-                "ledger_id": "89c8bd30-e06a-4a79-b396-e6c7e13e7a12",
+                "ledger_id": "89c8-xxxxx",
                 "description": null,
                 "normal_balance": "debit",
                 "metadata": {},
@@ -84,9 +84,9 @@ class LedgerAccountTests : WireMockClientTest() {
 
         val actualResponse = client.createLedgerAccount(request).get()
         val expectedDeserialized = LedgerAccount(
-            id = "f1c7e474-e6d5-4741-9f76-04510c8b6d7a",
+            id = "f1c7-xxxxx",
             name = "Operating Bank Account",
-            ledgerId = "89c8bd30-e06a-4a79-b396-e6c7e13e7a12",
+            ledgerId = "89c8-xxxxx",
             description = null,
             normalBalance = NormalBalanceType.DEBIT,
             metadata = emptyMap(),

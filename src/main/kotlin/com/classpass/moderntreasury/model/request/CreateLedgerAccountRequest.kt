@@ -7,5 +7,5 @@ data class CreateLedgerAccountRequest(
     val description: String?,
     val normalBalance: NormalBalanceType,
     val ledgerId: String,
-    val metadata: Map<String, String> = emptyMap()
+    val metadata: RequestMetadata = emptyMap()
 )
