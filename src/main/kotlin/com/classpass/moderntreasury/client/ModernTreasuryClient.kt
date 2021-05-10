@@ -33,12 +33,6 @@ import java.time.Duration
 import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 
-/** TODO for monday:
- * DONE Refactor parent test class to have some precooked responses to make tests smaller
- * DONE Add idempotency keys to all post/patch requests
- * do a pass through all request objects for comment clarity
- */
-
 interface ModernTreasuryClient : Closeable {
 
     fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount>
