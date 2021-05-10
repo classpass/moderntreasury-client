@@ -103,11 +103,11 @@ interface ModernTreasuryClient : Closeable {
          * The ID of the ledger transaction to update
          */
         id: String,
-        description: String?,
+        description: String? = null,
         /**
          * To post the ledger transaction, use POSTED. To archive a pending ledger transaction, use ARCHIVED.
          */
-        status: LedgerTransactionStatus?,
+        status: LedgerTransactionStatus? = null,
         /**
          * Note that updating entries will overwrite any prior entries on the ledger transaction.
          */

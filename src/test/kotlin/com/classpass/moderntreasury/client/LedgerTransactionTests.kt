@@ -118,4 +118,11 @@ class LedgerTransactionTests : WireMockClientTest() {
         )
         assertDoesNotThrow { client.updateLedgerTransaction(request).get() }
     }
+
+    @Test
+    fun `getLedgerTransaction builds the url path properly`() {
+        val id = "123abc"
+        stubFor(get("/ledger_transactions/123abc").willReturn(ledgerTransactionResponse))
+        assertDoesNotThrow { client.getLedgerTransaction(id).get() }
+    }
 }
