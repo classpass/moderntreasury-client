@@ -9,7 +9,6 @@ import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
@@ -19,28 +18,7 @@ class LedgerAccountTests : WireMockClientTest() {
 
     @Test
     fun testGetBalance() {
-        val response = """
-        {
-          "pending": [
-            {
-              "credits": 6,
-              "debits": 23,
-              "amount": -17,
-              "currency": "USD"
-            }
-          ],
-          "posted": [
-            {
-              "credits": 0,
-              "debits": 11,
-              "amount": -11,
-              "currency": "USD"
-            }
-          ]
-        }    
-        """.trimIndent()
-
-        stubFor(get(urlMatching("/ledger_accounts/.+/balance")).willReturn(ok(response)))
+        stubFor(get(urlMatching("/ledger_accounts/.+/balance")).willReturn(ledgerAccountBalanceResponse))
         val expectedDeserialized = LedgerAccountBalance(
             pending = listOf(LedgerAccountBalanceItem(6, 23, -17, "USD")),
             posted = listOf(LedgerAccountBalanceItem(0, 11, -11, "USD"))
@@ -51,22 +29,13 @@ class LedgerAccountTests : WireMockClientTest() {
 
     @Test
     fun `createLedgerAccount makes a well-formatted request body and deserializes responses properly`() {
-        val response = """
-            {
-                "id": "f1c7-xxxxx",
-                "object": "ledger_account",
-                "name": "Operating Bank Account",
-                "ledger_id": "89c8-xxxxx",
-                "description": null,
-                "normal_balance": "debit",
-                "metadata": {},
-                "live_mode": true,
-                "created_at": "2020-08-04T16:54:32Z",
-                "updated_at": "2020-08-04T16:54:32Z"
-            }
-        """
-
-        val request = CreateLedgerAccountRequest("the_name", "the_description", NormalBalanceType.CREDIT, "1234")
+        val request = CreateLedgerAccountRequest(
+            "the_name",
+            "the_description",
+            NormalBalanceType.CREDIT,
+            "1234",
+            "idempotencykey"
+        )
         val expectedRequestJson = """
             {
                 "name": "the_name",
@@ -79,7 +48,7 @@ class LedgerAccountTests : WireMockClientTest() {
         stubFor(
             post(urlMatching("/ledger_accounts"))
                 .withRequestBody(equalToJson(expectedRequestJson))
-                .willReturn(ok(response))
+                .willReturn(ledgerAccountResponse)
         )
 
         val actualResponse = client.createLedgerAccount(request).get()

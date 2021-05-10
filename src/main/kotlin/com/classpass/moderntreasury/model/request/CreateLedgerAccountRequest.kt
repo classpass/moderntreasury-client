@@ -7,5 +7,6 @@ data class CreateLedgerAccountRequest(
     val description: String?,
     val normalBalance: NormalBalanceType,
     val ledgerId: String,
+    override val idempotencyKey: String,
     val metadata: RequestMetadata = emptyMap()
-)
+) : IdempotentRequest

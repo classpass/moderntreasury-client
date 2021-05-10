@@ -11,6 +11,7 @@ import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
+import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
@@ -33,8 +34,8 @@ import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 
 /** TODO for monday:
- * Refactor parent test class to have some precooked responses to make tests smaller
- * Add idempotency keys to all post/patch requests
+ * DONE Refactor parent test class to have some precooked responses to make tests smaller
+ * DONE Add idempotency keys to all post/patch requests
  * do a pass through all request objects for comment clarity
  */
 
@@ -47,8 +48,18 @@ interface ModernTreasuryClient : Closeable {
         description: String?,
         normalBalanceType: NormalBalanceType,
         ledgerId: String,
+        idempotencyKey: String,
         metadata: RequestMetadata = emptyMap()
-    ) = createLedgerAccount(CreateLedgerAccountRequest(name, description, normalBalanceType, ledgerId, metadata))
+    ) = createLedgerAccount(
+        CreateLedgerAccountRequest(
+            name,
+            description,
+            normalBalanceType,
+            ledgerId,
+            idempotencyKey,
+            metadata
+        )
+    )
 
     fun getLedgerAccountBalance(
         ledgerAccountId: String,
@@ -71,9 +82,18 @@ interface ModernTreasuryClient : Closeable {
         externalId: String,
         description: String?,
         status: LedgerTransactionStatus?,
-        metadata: RequestMetadata = emptyMap(),
+        idempotencyKey: String,
+        metadata: RequestMetadata = emptyMap()
     ): CompletableFuture<LedgerTransaction> = createLedgerTransaction(
-        CreateLedgerTransactionRequest(effectiveDate, ledgerEntries, externalId, description, status, metadata)
+        CreateLedgerTransactionRequest(
+            effectiveDate,
+            ledgerEntries,
+            externalId,
+            description,
+            status,
+            idempotencyKey,
+            metadata
+        )
     )
 
     fun createLedgerTransaction(
@@ -196,13 +216,14 @@ internal class AsyncModernTreasuryClient(
         prepareGet("$baseUrl$endpoint").setQueryParams(queryParams)
     }
 
-    private inline fun <T, reified R> post(
+    internal inline fun <reified R> post(
         endpoint: String,
-        requestBody: T
+        requestBody: IdempotentRequest,
     ) = executeRequest<R> {
         preparePost("$baseUrl$endpoint")
             .setBody(objectMapper.writeValueAsBytes(requestBody))
             .addHeader("Content-Type", "application/json")
+            .addHeader("Idempotency-Key", requestBody.idempotencyKey)
     }
 
     private inline fun <T, reified R> patch(

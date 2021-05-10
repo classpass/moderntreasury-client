@@ -11,7 +11,6 @@ import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.patch
 import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
@@ -19,40 +18,10 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 class LedgerTransactionTests : WireMockClientTest() {
-    private val ledgerTransactionResponse = """
-        {
-          "id": "4f5b1dd9-xxx123",
-          "object": "ledger_transaction",
-          "live_mode": false,
-          "external_id": "zwt3-xxx123",
-          "ledgerable_type": null,
-          "ledgerable_id": null,
-          "ledger_id": "0aa9c435-xxx123",
-          "description": "test 3 pending",
-          "status": "pending",
-          "ledger_entries": [
-            {
-              "id": "4492f794-xxx123",
-              "object": "ledger_entry",
-              "live_mode": false,
-              "amount": 6,
-              "direction": "credit",
-              "ledger_account_id": "f3e54ff6-xxx123",
-              "ledger_transaction_id": "4f5b1dd9-xxx123",
-              "discarded_at": null,
-              "created_at": "2021-05-04T21:44:08Z",
-              "updated_at": "2021-05-04T21:44:08Z"
-            }
-          ],
-          "posted_at": null,
-          "effective_date": "2021-05-04",
-          "metadata": {},
-          "created_at": "2021-05-04T21:44:08Z",
-          "updated_at": "2021-05-04T21:44:08Z"
-        }
-        """
 
     @Test
     fun `LedgerTransaction response serialization`() {
@@ -70,7 +39,7 @@ class LedgerTransactionTests : WireMockClientTest() {
                     ledgerAccountId = "f3e54ff6-xxx123",
                 ),
             ),
-            postedAt = null,
+            postedAt = ZonedDateTime.of(2020, 10, 20, 19, 11, 7, 0, ZoneId.of("UTC")),
             effectiveDate = LocalDate.of(2021, 5, 4),
             ledgerId = "0aa9c435-xxx123",
             ledgerableType = null,
@@ -79,7 +48,7 @@ class LedgerTransactionTests : WireMockClientTest() {
             liveMode = false
         )
 
-        stubFor(get(urlMatching("/ledger_transactions/.+")).willReturn(ok(ledgerTransactionResponse)))
+        stubFor(get(urlMatching("/ledger_transactions/.+")).willReturn(ledgerTransactionResponse))
         val actualLedgerTransaction = client.getLedgerTransaction("asdf").get()
         assertThat(actualLedgerTransaction).isEqualTo(expectedLedgerTransaction)
     }
@@ -98,6 +67,7 @@ class LedgerTransactionTests : WireMockClientTest() {
             "external-id",
             "description",
             LedgerTransactionStatus.PENDING,
+            "idempotencykey",
             metadata = mapOf("present" to "here i am", "nullvalue" to null, "emptystring" to "")
         )
 
@@ -123,7 +93,7 @@ class LedgerTransactionTests : WireMockClientTest() {
         """
         stubFor(
             post(urlMatching("/ledger_transactions$")).withRequestBody(equalToJson(expectedRequestJson))
-                .willReturn(ok(ledgerTransactionResponse))
+                .willReturn(ledgerTransactionResponse)
         )
 
         assertDoesNotThrow { client.createLedgerTransaction(request).get() }
@@ -144,7 +114,7 @@ class LedgerTransactionTests : WireMockClientTest() {
         """
         stubFor(
             patch(urlMatching("/ledger_transactions/the-id$")).withRequestBody(equalToJson(expectedRequestJson))
-                .willReturn(ok(ledgerTransactionResponse))
+                .willReturn(ledgerTransactionResponse)
         )
         assertDoesNotThrow { client.updateLedgerTransaction(request).get() }
     }
