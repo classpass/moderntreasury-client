@@ -6,10 +6,15 @@ import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.classpass.moderntreasury.exception.toModernTreasuryException
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerTransaction
+import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
+import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.IdempotentRequest
+import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
+import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -57,6 +62,79 @@ interface ModernTreasuryClient : Closeable {
          */
         asOfDate: LocalDate? = null
     ): CompletableFuture<LedgerAccountBalance>
+
+    fun getLedgerTransaction(
+        /**
+         * The ID of the ledger transaction
+         */
+        id: String
+    ): CompletableFuture<LedgerTransaction>
+
+    fun createLedgerTransaction(
+        effectiveDate: LocalDate,
+        ledgerEntries: List<RequestLedgerEntry>,
+        externalId: String,
+        description: String?,
+        status: LedgerTransactionStatus?,
+        idempotencyKey: String,
+        metadata: RequestMetadata = emptyMap()
+    ): CompletableFuture<LedgerTransaction> = createLedgerTransaction(
+        CreateLedgerTransactionRequest(
+            effectiveDate,
+            ledgerEntries,
+            externalId,
+            description,
+            status,
+            idempotencyKey,
+            metadata
+        )
+    )
+
+    fun createLedgerTransaction(
+        request: CreateLedgerTransactionRequest
+    ): CompletableFuture<LedgerTransaction>
+
+    /**
+     * Update a ledger transaction. Only pending ledger transactions can be updated. Returns the updated
+     * LedgerTransaction.
+     */
+    fun updateLedgerTransaction(
+        /**
+         * The ID of the ledger transaction to update
+         */
+        id: String,
+        description: String? = null,
+        /**
+         * To post the ledger transaction, use POSTED. To archive a pending ledger transaction, use ARCHIVED.
+         */
+        status: LedgerTransactionStatus? = null,
+        /**
+         * Note that updating entries will overwrite any prior entries on the ledger transaction.
+         */
+        ledgerEntries: List<RequestLedgerEntry>? = null,
+        metadata: RequestMetadata = emptyMap()
+    ): CompletableFuture<LedgerTransaction> =
+        updateLedgerTransaction(UpdateLedgerTransactionRequest(id, description, status, ledgerEntries, metadata))
+
+    /**
+     * Update a ledger transaction. Only pending ledger transactions can be updated. Returns the updated
+     * LedgerTransaction.
+     */
+    fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction>
+
+    /**
+     * Set a pending ledger transaction's status to ARCHIVED, effectively a soft delete.
+     */
+    fun archiveLedgerTransaction(
+        /**
+         * The ID of the ledger transaction to archive
+         */
+        id: String,
+    ): CompletableFuture<LedgerTransaction> = updateLedgerTransaction(
+        id,
+        null,
+        LedgerTransactionStatus.ARCHIVED
+    )
 
     fun ping(): CompletableFuture<Map<String, String>>
 }
@@ -111,6 +189,15 @@ internal class AsyncModernTreasuryClient(
 
         return get("/ledger_accounts/$ledgerAccountId/balance", queryParams)
     }
+
+    override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> =
+        get("/ledger_transactions/$id")
+
+    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
+        post("/ledger_transactions", request)
+
+    override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
+        patch("/ledger_transactions/${request.id}", request)
 
     override fun ping(): CompletableFuture<Map<String, String>> {
         return get("/ping")
