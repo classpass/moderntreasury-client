@@ -1,5 +1,6 @@
 package com.classpass.moderntreasury.model
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.LocalDate
 import java.time.ZonedDateTime
 
@@ -61,14 +62,21 @@ data class LedgerTransaction(
 )
 
 enum class LedgerTransactionStatus {
+    @JsonProperty("pending")
     PENDING,
+    @JsonProperty("posted")
     POSTED,
+    @JsonProperty("archived")
     ARCHIVED
 }
 
 enum class LedgerableType {
+    @JsonProperty("payment_order")
     PAYMENT_ORDER,
+    @JsonProperty("expected_payment")
     EXPECTED_PAYMENT,
+    @JsonProperty("paper_item")
     PAPER_ITEM,
+    @JsonProperty("return")
     RETURN
 }

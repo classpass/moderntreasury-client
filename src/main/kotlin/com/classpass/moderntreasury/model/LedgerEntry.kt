@@ -1,5 +1,7 @@
 package com.classpass.moderntreasury.model
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 /**
  * A LedgerEntry represents an accounting entry within a parent LedgerTransaction. Its amount is denominated in the
  * currency of the ledger it belongs to.
@@ -29,6 +31,8 @@ data class LedgerEntry(
 )
 
 enum class LedgerEntryDirection {
+    @JsonProperty("credit")
     CREDIT,
+    @JsonProperty("debit")
     DEBIT
 }
