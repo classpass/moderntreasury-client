@@ -1,10 +1,14 @@
 package com.classpass.moderntreasury.client
 
 import assertk.assertThat
+import assertk.assertions.hasSize
+import assertk.assertions.isEqualTo
 import assertk.assertions.isEqualToWithGivenProperties
 import assertk.assertions.isFailure
 import com.classpass.moderntreasury.exception.ModernTreasuryException
 import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerTransaction
+import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.github.tomakehurst.wiremock.client.BasicCredentials
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
@@ -87,5 +91,25 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
                 .willReturn(ledgerAccountBalanceResponse)
         )
         assertDoesNotThrow { client.post<LedgerAccountBalance>("/foo", request).get() }
+    }
+
+    @Test
+    fun `test paginated response deserialization`() {
+        val listResponse = "[$ledgerTransactionResponse, $ledgerTransactionResponse, $ledgerTransactionResponse]"
+
+        stubFor(
+            get(anyUrl()).willReturn(
+                ok(listResponse)
+                    .withHeader("x-page", "1")
+                    .withHeader("x-per-page", "3")
+                    .withHeader("x-total-count", "40")
+            )
+        )
+
+        val result = client.get<ModernTreasuryPage<LedgerTransaction>>("/foo").get()
+        assertThat(result.page).isEqualTo(1)
+        assertThat(result.perPage).isEqualTo(3)
+        assertThat(result.totalCount).isEqualTo(40)
+        assertThat(result.content).hasSize(3)
     }
 }

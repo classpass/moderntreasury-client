@@ -219,7 +219,7 @@ internal class AsyncModernTreasuryClient(
         return get("/ping")
     }
 
-    private inline fun <reified R> get(
+    internal inline fun <reified R> get(
         endpoint: String,
         queryParams: Map<String, List<String>> = emptyMap()
     ) = executeRequest<R> {
@@ -255,10 +255,10 @@ internal class AsyncModernTreasuryClient(
             }
         }.thenCompose {
             val requestBuilder = block.invoke(httpClient)
-            requestBuilder.execute()
-                .deserialize2xx(typeRef, objectReader) {
-                    throw it.toModernTreasuryException(objectReader)
-                }
+            val response = requestBuilder.execute()
+            response.deserialize2xx(typeRef, objectReader) {
+                throw it.toModernTreasuryException(objectReader)
+            }
         }
     }
 
