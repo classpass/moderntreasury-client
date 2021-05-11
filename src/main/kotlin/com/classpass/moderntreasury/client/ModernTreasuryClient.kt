@@ -8,6 +8,7 @@ import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerTransaction
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
+import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
@@ -69,6 +70,14 @@ interface ModernTreasuryClient : Closeable {
          */
         id: String
     ): CompletableFuture<LedgerTransaction>
+
+    fun getLedgerTransactions(
+        ledgerId: String? = null,
+        /**
+         * Key/Value metadata pairs to search transactions for. TODO are they ANDed together?
+         */
+        metadata: Map<String, String>
+    ): ModernTreasuryPage<LedgerTransaction>
 
     fun createLedgerTransaction(
         effectiveDate: LocalDate,
@@ -192,6 +201,13 @@ internal class AsyncModernTreasuryClient(
 
     override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> =
         get("/ledger_transactions/$id")
+
+    override fun getLedgerTransactions(
+        ledgerId: String?,
+        metadata: Map<String, String>
+    ): ModernTreasuryPage<LedgerTransaction> {
+        TODO("Not yet implemented")
+    }
 
     override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
         post("/ledger_transactions", request)
