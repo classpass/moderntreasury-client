@@ -4,14 +4,17 @@ import com.classpass.clients.deserialize2xx
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.classpass.moderntreasury.exception.toModernTreasuryException
-import com.classpass.moderntreasury.model.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.NormalBalanceType
+import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
+import com.classpass.moderntreasury.model.request.IdempotentRequest
+import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
@@ -34,8 +37,18 @@ interface ModernTreasuryClient : Closeable {
         description: String?,
         normalBalanceType: NormalBalanceType,
         ledgerId: String,
-        metadata: Map<String, String> = emptyMap()
-    ) = createLedgerAccount(CreateLedgerAccountRequest(name, description, normalBalanceType, ledgerId, metadata))
+        idempotencyKey: String,
+        metadata: RequestMetadata = emptyMap()
+    ) = createLedgerAccount(
+        CreateLedgerAccountRequest(
+            name,
+            description,
+            normalBalanceType,
+            ledgerId,
+            idempotencyKey,
+            metadata
+        )
+    )
 
     fun getLedgerAccountBalance(
         ledgerAccountId: String,
@@ -55,7 +68,7 @@ interface ModernTreasuryClient : Closeable {
 fun asyncModernTreasuryClient(config: ModernTreasuryConfig): ModernTreasuryClient = AsyncModernTreasuryClient.create(config)
 
 internal class AsyncModernTreasuryClient(
-    private val httpClient: AsyncHttpClient,
+    internal val httpClient: AsyncHttpClient,
     private val baseUrl: String,
     private val rateLimiter: RateLimiter,
     private val rateLimitTimeoutMs: Long
@@ -77,6 +90,7 @@ internal class AsyncModernTreasuryClient(
     private val objectMapper: ObjectMapper = JsonMapper.builder()
         .addModules(KotlinModule(), JavaTimeModule())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
         .enable(MapperFeature.BLOCK_UNSAFE_POLYMORPHIC_BASE_TYPES)
         .build()
@@ -109,11 +123,21 @@ internal class AsyncModernTreasuryClient(
         prepareGet("$baseUrl$endpoint").setQueryParams(queryParams)
     }
 
-    private inline fun <T, reified R> post(
+    internal inline fun <reified R> post(
+        endpoint: String,
+        requestBody: IdempotentRequest,
+    ) = executeRequest<R> {
+        preparePost("$baseUrl$endpoint")
+            .setBody(objectMapper.writeValueAsBytes(requestBody))
+            .addHeader("Content-Type", "application/json")
+            .addHeader("Idempotency-Key", requestBody.idempotencyKey)
+    }
+
+    private inline fun <T, reified R> patch(
         endpoint: String,
         requestBody: T
     ) = executeRequest<R> {
-        preparePost("$baseUrl$endpoint")
+        preparePatch("$baseUrl$endpoint")
             .setBody(objectMapper.writeValueAsBytes(requestBody))
             .addHeader("Content-Type", "application/json")
     }

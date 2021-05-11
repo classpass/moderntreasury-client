@@ -4,16 +4,21 @@ import assertk.assertThat
 import assertk.assertions.isEqualToWithGivenProperties
 import assertk.assertions.isFailure
 import com.classpass.moderntreasury.exception.ModernTreasuryException
+import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.github.tomakehurst.wiremock.client.BasicCredentials
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.ok
+import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 
 class AsyncModernTreasuryClientTest : WireMockClientTest() {
     @Test
@@ -67,5 +72,20 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
                 ModernTreasuryException::message,
                 ModernTreasuryException::parameter
             )
+    }
+
+    @Test
+    fun `post requests include idempotency key`() {
+        val expectedIdempotencyKey = "Hello, I am the idempotency key"
+
+        val request = object : IdempotentRequest {
+            override val idempotencyKey = expectedIdempotencyKey
+        }
+
+        stubFor(
+            post(anyUrl()).withHeader("Idempotency-Key", equalTo(expectedIdempotencyKey))
+                .willReturn(ledgerAccountBalanceResponse)
+        )
+        assertDoesNotThrow { client.post<LedgerAccountBalance>("/foo", request).get() }
     }
 }
