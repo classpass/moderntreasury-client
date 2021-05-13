@@ -7,8 +7,6 @@ import assertk.assertions.isEqualToWithGivenProperties
 import assertk.assertions.isFailure
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountBalance
-import com.classpass.moderntreasury.model.LedgerTransaction
-import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.github.tomakehurst.wiremock.client.BasicCredentials
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse

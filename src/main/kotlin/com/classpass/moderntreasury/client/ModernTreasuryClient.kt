@@ -1,6 +1,5 @@
 package com.classpass.moderntreasury.client
 
-import com.classpass.clients.deserialize2xx
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.RateLimitTimeoutException
@@ -18,7 +17,6 @@ import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -233,7 +231,6 @@ internal class AsyncModernTreasuryClient(
         endpoint: String,
         queryParams: Map<String, List<String>> = emptyMap()
     ) = executePaginatedRequest<R> {
-        val typeRef = jacksonTypeRef<List<R>>()
         prepareGet("$baseUrl$endpoint").setQueryParams(queryParams)
     }
 
@@ -256,41 +253,13 @@ internal class AsyncModernTreasuryClient(
             .addHeader("Content-Type", "application/json")
     }
 
-    internal inline fun <reified T> executeRequestOrig(
-        crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
-    ): CompletableFuture<T> {
-        val typeRef = jacksonTypeRef<T>()
-        return CompletableFuture.supplyAsync {
-            if (!rateLimiter.tryAcquire(Duration.ofMillis(rateLimitTimeoutMs))) {
-                throw RateLimitTimeoutException(rateLimitTimeoutMs)
-            }
-        }.thenCompose {
-            val requestBuilder = block.invoke(httpClient)
-            val response = requestBuilder.execute()
-            response.deserialize2xx(typeRef, objectReader) {
-                throw it.toModernTreasuryException(objectReader)
-            }
-        }
-    }
-
     internal inline fun <reified T> executeRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
-    ): CompletableFuture<T> {
-        val typeRef = jacksonTypeRef<T>() // good
-        return sendRequest(block).thenApply {
-            deserializeResponse<T>(it, typeRef)
-        }
-    }
+    ) = sendRequest(block).thenApply<T>(this::deserializeResponse)
 
     internal inline fun <reified T> executePaginatedRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
-    ): CompletableFuture<ModernTreasuryPage<T>> {
-        val unwrappedType = jacksonTypeRef<T>()
-        val typeRef = jacksonTypeRef<List<T>>() // good
-        return sendRequest(block).thenApply {
-            deserializePagedResponse(it, typeRef)
-        }
-    }
+    ) = sendRequest(block).thenApply<ModernTreasuryPage<T>>(this::deserializePagedResponse)
 
     internal inline fun sendRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
@@ -308,12 +277,11 @@ internal class AsyncModernTreasuryClient(
         }
     }
 
-    internal inline fun <reified T> deserializeResponse(response: Response, typeRef: TypeReference<T>): T {
-        return objectReader.forType(typeRef).readValue(response.responseBody)
-    }
+    internal inline fun <reified T> deserializeResponse(response: Response): T =
+        objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
 
-    internal inline fun <reified T> deserializePagedResponse(response: Response, typeRef: TypeReference<List<T>>): ModernTreasuryPage<T> {
-        val content = deserializeResponse<List<T>>(response, typeRef)
+    internal inline fun <reified T> deserializePagedResponse(response: Response): ModernTreasuryPage<T> {
+        val content = deserializeResponse<List<T>>(response)
         val pageInfo = response.extractPageInfo() ?: throw MissingPaginationHeadersException(response)
         return ModernTreasuryPage(pageInfo, content)
     }
