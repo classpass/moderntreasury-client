@@ -1,7 +1,7 @@
 package com.classpass.moderntreasury.client
 
-import com.classpass.clients.deserialize2xx
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
+import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.classpass.moderntreasury.exception.toModernTreasuryException
 import com.classpass.moderntreasury.model.LedgerAccount
@@ -10,6 +10,7 @@ import com.classpass.moderntreasury.model.LedgerTransaction
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.NormalBalanceType
+import com.classpass.moderntreasury.model.extractPageInfo
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.IdempotentRequest
@@ -29,6 +30,7 @@ import com.google.common.util.concurrent.RateLimiter
 import org.asynchttpclient.AsyncHttpClient
 import org.asynchttpclient.BoundRequestBuilder
 import org.asynchttpclient.Dsl
+import org.asynchttpclient.Response
 import java.io.Closeable
 import java.time.Duration
 import java.time.LocalDate
@@ -226,6 +228,13 @@ internal class AsyncModernTreasuryClient(
         prepareGet("$baseUrl$endpoint").setQueryParams(queryParams)
     }
 
+    internal inline fun <reified R> getPaginated(
+        endpoint: String,
+        queryParams: Map<String, List<String>> = emptyMap()
+    ) = executePaginatedRequest<R> {
+        prepareGet("$baseUrl$endpoint").setQueryParams(queryParams)
+    }
+
     internal inline fun <reified R> post(
         endpoint: String,
         requestBody: IdempotentRequest,
@@ -247,19 +256,39 @@ internal class AsyncModernTreasuryClient(
 
     internal inline fun <reified T> executeRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
-    ): CompletableFuture<T> {
-        val typeRef = jacksonTypeRef<T>()
+    ): CompletableFuture<T> = sendRequest(block).thenApply {
+        deserializeResponse<T>(it)
+    }
+
+    internal inline fun <reified T> executePaginatedRequest(
+        crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
+    ): CompletableFuture<ModernTreasuryPage<T>> = sendRequest(block).thenApply {
+        deserializePagedResponse(it)
+    }
+
+    internal inline fun sendRequest(
+        crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
+    ): CompletableFuture<Response> {
         return CompletableFuture.supplyAsync {
             if (!rateLimiter.tryAcquire(Duration.ofMillis(rateLimitTimeoutMs))) {
                 throw RateLimitTimeoutException(rateLimitTimeoutMs)
             }
-        }.thenCompose {
-            val requestBuilder = block.invoke(httpClient)
-            val response = requestBuilder.execute()
-            response.deserialize2xx(typeRef, objectReader) {
-                throw it.toModernTreasuryException(objectReader)
+            val response = block.invoke(httpClient).execute().get()
+            if (response.statusCode in 200..299) {
+                response
+            } else {
+                throw response.toModernTreasuryException(objectReader)
             }
         }
+    }
+
+    internal inline fun <reified T> deserializeResponse(response: Response): T =
+        objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
+
+    internal inline fun <reified T> deserializePagedResponse(response: Response): ModernTreasuryPage<T> {
+        val content = deserializeResponse<List<T>>(response)
+        val pageInfo = response.extractPageInfo() ?: throw MissingPaginationHeadersException(response)
+        return ModernTreasuryPage(pageInfo, content)
     }
 
     /**
