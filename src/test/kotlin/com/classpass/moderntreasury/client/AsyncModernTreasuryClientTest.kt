@@ -5,7 +5,7 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isEqualToWithGivenProperties
 import assertk.assertions.isFailure
-import com.classpass.moderntreasury.exception.ModernTreasuryException
+import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerTransaction
 import com.classpass.moderntreasury.model.ModernTreasuryPage
@@ -48,16 +48,16 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
         """.trimIndent()
         stubFor(get(anyUrl()).willReturn(aResponse().withStatus(404).withBody(errorJson)))
 
-        val expected = ModernTreasuryException(404, errorJson, "resource_not_found", "Resource not found", "id")
+        val expected = ModernTreasuryApiException(404, errorJson, "resource_not_found", "Resource not found", "id")
         assertThat { client.ping().get() }.isFailure()
-            .transform { it.cause as ModernTreasuryException }
+            .transform { it.cause as ModernTreasuryApiException }
             .isEqualToWithGivenProperties(
                 expected,
-                ModernTreasuryException::httpStatus,
-                ModernTreasuryException::httpResponseBody,
-                ModernTreasuryException::code,
-                ModernTreasuryException::message,
-                ModernTreasuryException::parameter
+                ModernTreasuryApiException::httpStatus,
+                ModernTreasuryApiException::httpResponseBody,
+                ModernTreasuryApiException::code,
+                ModernTreasuryApiException::message,
+                ModernTreasuryApiException::parameter
             )
     }
 
@@ -66,15 +66,15 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
         val errorJson = "Uh oh! This isn't the right error format"
         stubFor(get(anyUrl()).willReturn(aResponse().withStatus(500).withBody(errorJson)))
 
-        val expected = ModernTreasuryException(500, errorJson, null, null, null)
+        val expected = ModernTreasuryApiException(500, errorJson, null, null, null)
         assertThat { client.ping().get() }.isFailure()
-            .transform { it.cause as ModernTreasuryException }
+            .transform { it.cause as ModernTreasuryApiException }
             .isEqualToWithGivenProperties(
                 expected,
-                ModernTreasuryException::httpStatus,
-                ModernTreasuryException::code,
-                ModernTreasuryException::message,
-                ModernTreasuryException::parameter
+                ModernTreasuryApiException::httpStatus,
+                ModernTreasuryApiException::code,
+                ModernTreasuryApiException::message,
+                ModernTreasuryApiException::parameter
             )
     }
 

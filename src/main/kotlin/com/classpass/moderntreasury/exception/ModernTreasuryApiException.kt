@@ -7,11 +7,11 @@ import org.asynchttpclient.Response
 import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
 
-private val logger = LoggerFactory.getLogger(ModernTreasuryException::class.java)
+private val logger = LoggerFactory.getLogger(ModernTreasuryApiException::class.java)
 /**
  * Represents an error returned by the ModernTreasury API.
  */
-class ModernTreasuryException(
+class ModernTreasuryApiException(
     /**
      * The HTTP Status code on the response
      */
@@ -41,7 +41,7 @@ class ModernTreasuryException(
  * Convert an error response from ModernTreasury into a ModernTreasuryException. Throws IllegalArgumentException if the
  * response has a 2xx status code.
  */
-fun Response.toModernTreasuryException(reader: ObjectReader): ModernTreasuryException {
+fun Response.toModernTreasuryException(reader: ObjectReader): ModernTreasuryApiException {
     if (statusCode in 200..299) {
         throw IllegalArgumentException("Can't create a ModernTreasuryException out of a succesful response")
     }
@@ -52,7 +52,7 @@ fun Response.toModernTreasuryException(reader: ObjectReader): ModernTreasuryExce
         logger.warn("could not parse Modern Treasury error response: $responseBody. ${e.message}")
         ModernTreasuryErrorBody(null, null, null)
     }
-    return ModernTreasuryException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
+    return ModernTreasuryApiException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
 }
 
 @JsonRootName("errors")
