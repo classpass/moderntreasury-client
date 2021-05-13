@@ -9,6 +9,7 @@ import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
+import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.client.WireMock.get
@@ -128,18 +129,29 @@ class LedgerTransactionTests : WireMockClientTest() {
     }
 
     @Test
-    fun `getLedgerTransactions serialization`() {
+    fun `getLedgerTransactions metadata serialization`() {
         val metadata = mapOf(
             "foo" to "bar",
             "fiz" to "buzz",
             "key with spaces" to "value with spaces",
         )
         stubFor(
-            get("/ledger_transactions/")
+            get(anyUrl())
                 .withQueryParam("metadata%5Bfoo%5D", equalTo("bar"))
                 .withQueryParam("metadata%5Bfiz%5D", equalTo("buzz"))
-                .withQueryParam("metadata%5Bkey%20with%20spaces%5D", equalTo("value%20with%20spaces"))
-                .willReturn(ledgerTransactionsListResponse)
+                /**
+                 * There's a little bug in wiremock. query param values get their space characters decoded before
+                 * comparing with the stub, so if we had tried to match a query param equalTo("value%20with%20spaces")
+                 * then the test would fail. Even though we can clearly see in the netty logs that "value%20with%20spaces"
+                 * is exactly what we're sending over the wire.
+                 */
+                .withQueryParam("metadata%5Bkey%20with%20spaces%5D", equalTo("value with spaces"))
+                .willReturn(
+                    ledgerTransactionsListResponse
+                        .withHeader("x-page", "1")
+                        .withHeader("x-per-page", "3")
+                        .withHeader("x-total-count", "40")
+                )
         )
 
         assertDoesNotThrow { client.getLedgerTransactions(null, metadata).get() }

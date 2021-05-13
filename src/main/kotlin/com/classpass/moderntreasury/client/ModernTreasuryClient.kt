@@ -17,6 +17,7 @@ import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
+import com.classpass.moderntreasury.model.request.toQueryParams
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -210,8 +211,7 @@ internal class AsyncModernTreasuryClient(
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val queryParams = mapOf(
             "ledger_id" to listOfNotNull(ledgerId),
-            "metadata" to listOf(objectMapper.writeValueAsString(metadata))
-        )
+        ).plus(metadata.toQueryParams())
 
         return getPaginated("/ledger_transactions", queryParams)
     }
