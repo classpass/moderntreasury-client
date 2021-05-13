@@ -95,12 +95,9 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
 
     @Test
     fun `test paginated response deserialization`() {
-        val responseElement = ledgerTransactionResponse.build().body
-        val listResponse = "[$responseElement, $responseElement, $responseElement]"
-
         stubFor(
             get(anyUrl()).willReturn(
-                ok(listResponse)
+                ledgerTransactionsListResponse
                     .withHeader("x-page", "1")
                     .withHeader("x-per-page", "3")
                     .withHeader("x-total-count", "40")
@@ -116,10 +113,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
 
     @Test
     fun `test missing pagination headers`() {
-        val responseElement = ledgerTransactionResponse.build().body
-        val listResponse = "[$responseElement, $responseElement, $responseElement]"
-
-        stubFor(get(anyUrl()).willReturn(ok(listResponse)))
+        stubFor(get(anyUrl()).willReturn(ledgerTransactionsListResponse))
 
         assertThat { client.getLedgerTransactions("foo").get() }.isFailure()
             .transform { it.cause!! }

@@ -207,8 +207,14 @@ internal class AsyncModernTreasuryClient(
     override fun getLedgerTransactions(
         ledgerId: String?,
         metadata: Map<String, String>
-    ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> =
-        getPaginated<LedgerTransaction>("/ledger_transactions")
+    ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
+        val queryParams = mapOf(
+            "ledger_id" to listOfNotNull(ledgerId),
+            "metadata" to listOf(objectMapper.writeValueAsString(metadata))
+        )
+
+        return getPaginated("/ledger_transactions", queryParams)
+    }
 
     override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
         post("/ledger_transactions", request)
