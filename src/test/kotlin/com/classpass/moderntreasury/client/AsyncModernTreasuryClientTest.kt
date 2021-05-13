@@ -95,7 +95,8 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
 
     @Test
     fun `test paginated response deserialization`() {
-        val listResponse = "[$ledgerTransactionResponse, $ledgerTransactionResponse, $ledgerTransactionResponse]"
+        val responseElement = ledgerTransactionResponse.build().body
+        val listResponse = "[$responseElement, $responseElement, $responseElement]"
 
         stubFor(
             get(anyUrl()).willReturn(
@@ -106,7 +107,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
             )
         )
 
-        val result = client.get<ModernTreasuryPage<LedgerTransaction>>("/foo").get()
+        val result = client.getLedgerTransactions("foo").get()
         assertThat(result.page).isEqualTo(1)
         assertThat(result.perPage).isEqualTo(3)
         assertThat(result.totalCount).isEqualTo(40)

@@ -25,7 +25,7 @@ data class Ledger(
      * Additional data represented as key-value pairs. Both the key and value must be strings. See
      * https://docs.moderntreasury.com/reference#metadata.
      */
-    val metadata: Map<String, String>,
+val metadata: Map<String, String>,
     /**
      * This field will be true if this object was created with a production API key or false if created with a test API
      * key.
