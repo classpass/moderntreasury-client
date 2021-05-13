@@ -5,6 +5,8 @@ import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isEqualToWithGivenProperties
 import assertk.assertions.isFailure
+import assertk.assertions.isInstanceOf
+import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.request.IdempotentRequest
@@ -110,5 +112,17 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
         assertThat(result.perPage).isEqualTo(3)
         assertThat(result.totalCount).isEqualTo(40)
         assertThat(result.content).hasSize(3)
+    }
+
+    @Test
+    fun `test missing pagination headers`() {
+        val responseElement = ledgerTransactionResponse.build().body
+        val listResponse = "[$responseElement, $responseElement, $responseElement]"
+
+        stubFor(get(anyUrl()).willReturn(ok(listResponse)))
+
+        assertThat { client.getLedgerTransactions("foo").get() }.isFailure()
+            .transform { it.cause!! }
+            .isInstanceOf(MissingPaginationHeadersException::class.java)
     }
 }
