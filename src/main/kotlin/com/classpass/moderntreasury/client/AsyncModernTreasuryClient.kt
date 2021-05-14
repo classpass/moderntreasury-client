@@ -4,12 +4,14 @@ import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.classpass.moderntreasury.exception.toModernTreasuryException
+import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerTransaction
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.extractPageInfo
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
+import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
@@ -102,6 +104,9 @@ internal class AsyncModernTreasuryClient(
 
     override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
         patch("/ledger_transactions/${request.id}", request)
+
+    override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> =
+        post("/ledgers", request)
 
     override fun ping(): CompletableFuture<Map<String, String>> {
         return get("/ping")

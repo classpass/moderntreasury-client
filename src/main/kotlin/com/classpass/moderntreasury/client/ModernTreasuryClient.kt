@@ -1,5 +1,6 @@
 package com.classpass.moderntreasury.client
 
+import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerTransaction
@@ -7,6 +8,7 @@ import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
+import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
@@ -126,6 +128,27 @@ interface ModernTreasuryClient : Closeable {
         LedgerTransactionStatus.ARCHIVED
     )
 
+    fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger>
+
+    fun createLedger(
+        /**
+         * The name of the ledger.
+         */
+        name: String,
+        /**
+         * An optional free-form description for internal use.
+         */
+        description: String? = null,
+        /**
+         * An ISO currency code in which all associated ledger entries are denominated. e.g. "usd"
+         */
+        currency: String,
+        idempotencyKey: String,
+        /**
+         * Additional data represented as key-value pairs. See https://docs.moderntreasury.com/reference#metadata.
+         */
+        metadata: RequestMetadata = emptyMap()
+    ) = createLedger(CreateLedgerRequest(name, description, currency, idempotencyKey, metadata))
+
     fun ping(): CompletableFuture<Map<String, String>>
 }
-
