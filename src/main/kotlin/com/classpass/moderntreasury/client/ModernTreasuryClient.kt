@@ -77,7 +77,7 @@ interface ModernTreasuryClient : Closeable {
     fun getLedgerTransactions(
         ledgerId: String? = null,
         /**
-         * Key/Value metadata pairs to search transactions for. TODO are they ANDed together?
+         * Key/Value metadata pairs to search transactions for.
          */
         metadata: Map<String, String> = emptyMap()
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>>
@@ -265,7 +265,7 @@ internal class AsyncModernTreasuryClient(
 
     internal inline fun <reified T> executePaginatedRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
-    ) = sendRequest(block).thenApply<ModernTreasuryPage<T>>(this::deserializePagedResponse)
+    ) = sendRequest(block).thenApply<ModernTreasuryPage<T>>(this::deserializePaginatedResponse)
 
     internal inline fun sendRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
@@ -286,7 +286,7 @@ internal class AsyncModernTreasuryClient(
     internal inline fun <reified T> deserializeResponse(response: Response): T =
         objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
 
-    internal inline fun <reified T> deserializePagedResponse(response: Response): ModernTreasuryPage<T> {
+    internal inline fun <reified T> deserializePaginatedResponse(response: Response): ModernTreasuryPage<T> {
         val content = deserializeResponse<List<T>>(response)
         val pageInfo = response.extractPageInfo() ?: throw MissingPaginationHeadersException(response)
         return ModernTreasuryPage(pageInfo, content)

@@ -8,15 +8,6 @@ import com.google.common.net.UrlEscapers
  */
 typealias RequestMetadata = Map<String, String?>
 
-fun Map<String, String>.toEncodedQueryParams(): Map<String, List<String>> {
-    val escaper = UrlEscapers.urlFragmentEscaper()
-    return this.mapKeys { (key, _) ->
-        "metadata[${escaper.escape(key)}]"
-    }.mapValues { (_, value) ->
-        listOf(escaper.escape(value))
-    }
-}
-
 fun Map<String, String>.toQueryParams(): Map<String, List<String>> {
     val escaper = UrlEscapers.urlFragmentEscaper()
     return this.mapKeys { (key, _) ->

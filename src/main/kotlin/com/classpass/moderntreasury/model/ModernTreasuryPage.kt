@@ -10,8 +10,8 @@ internal const val TOTAL_COUNT_HEADER = "x-total-count"
 /**
  * Represents a page of content returned from a paginated "List" endpoint on ModernTreasury.
  */
-class ModernTreasuryPage<T>(
-    pageInfo: ModernTreasuryPageInfo,
+data class ModernTreasuryPage<T>(
+    private val pageInfo: ModernTreasuryPageInfo,
     /**
      * The content of the current page
      */
