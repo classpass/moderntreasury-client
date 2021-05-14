@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
+import com.github.tomakehurst.wiremock.http.HttpHeaders
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 
@@ -113,7 +114,12 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
 
     @Test
     fun `test missing pagination headers`() {
-        stubFor(get(anyUrl()).willReturn(ledgerTransactionsListResponse))
+        stubFor(
+            get(anyUrl()).willReturn(
+                ledgerTransactionsListResponse
+                    .withHeaders(HttpHeaders.noHeaders())
+            )
+        )
 
         assertThat { client.getLedgerTransactions("foo").get() }.isFailure()
             .transform { it.cause!! }
