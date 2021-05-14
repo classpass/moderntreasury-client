@@ -1,5 +1,9 @@
 package com.classpass.moderntreasury.model.request
 
+/**
+ * A Ledger reqpresents a standard chart of ledger accounts.
+ * API Doc reference: https://docs.moderntreasury.com/reference#ledger-object
+ */
 data class CreateLedgerRequest(
     /**
      * The name of the ledger.
@@ -18,4 +22,4 @@ data class CreateLedgerRequest(
      * Additional data represented as key-value pairs. See https://docs.moderntreasury.com/reference#metadata.
      */
     val metadata: RequestMetadata = emptyMap()
-): IdempotentRequest
+) : IdempotentRequest

@@ -26,7 +26,7 @@ import java.time.ZonedDateTime
 class LedgerTransactionTests : WireMockClientTest() {
 
     @Test
-    fun `LedgerTransaction response serialization`() {
+    fun `LedgerTransaction response deserialization`() {
         val expectedLedgerTransaction = LedgerTransaction(
             id = "4f5b1dd9-xxx123",
             description = "test 3 pending",

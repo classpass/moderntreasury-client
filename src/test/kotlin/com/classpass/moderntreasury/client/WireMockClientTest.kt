@@ -123,4 +123,20 @@ open class WireMockClientTest {
             "[$responseElement, $responseElement, $responseElement]"
         }
     )
+
+    protected val ledgerResponse = ok(
+        """
+       {
+            "id": "89c8bd30-e06a-4a79-b396-e6c7e13e7a12",
+            "object": "ledger",
+            "name": "Business Ledger",
+            "description": null,
+            "currency": "USD",
+            "metadata": {},
+            "live_mode": true,
+            "created_at": "2020-08-04T16:48:05Z",
+            "updated_at": "2020-08-04T16:48:05Z"
+        } 
+        """.trimIndent()
+    )
 }
