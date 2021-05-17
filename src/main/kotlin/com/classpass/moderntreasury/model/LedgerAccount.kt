@@ -29,6 +29,12 @@ data class LedgerAccount(
      */
     val ledgerId: String,
     /**
+     * an integer that is incremented every time a transaction is posted to the account. When the client is creating a
+     * ledger transaction and wants to assert that the ledger account's state hasn't changed since the last read, it can
+     * optionally pass version into the create call for each ledger entry.
+     */
+    val lockVersion: Int,
+    /**
      * Additional data represented as key-value pairs. Both the key and value must be strings. See
      * https://docs.moderntreasury.com/reference#metadata.
      */

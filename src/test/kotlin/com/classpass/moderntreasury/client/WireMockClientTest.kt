@@ -52,6 +52,7 @@ open class WireMockClientTest {
                 "ledger_id": "89c8-xxxxx",
                 "description": null,
                 "normal_balance": "debit",
+                "lock_version": "23",
                 "metadata": {},
                 "live_mode": true,
                 "created_at": "2020-08-04T16:54:32Z",

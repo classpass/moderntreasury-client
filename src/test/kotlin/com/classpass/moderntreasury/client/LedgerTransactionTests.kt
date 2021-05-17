@@ -64,6 +64,7 @@ class LedgerTransactionTests : WireMockClientTest() {
                     amount = 6,
                     direction = LedgerEntryDirection.DEBIT,
                     ledgerAccountId = "f3e54ff6-xxx123",
+                    lockVersion = 4
                 ),
             ),
             "external-id",
@@ -79,7 +80,8 @@ class LedgerTransactionTests : WireMockClientTest() {
                 {
                   "amount": 6,
                   "direction": "debit",
-                  "ledger_account_id": "f3e54ff6-xxx123"
+                  "ledger_account_id": "f3e54ff6-xxx123",
+                  "lock_version": 4
                 }
               ],
               "description": "description",
