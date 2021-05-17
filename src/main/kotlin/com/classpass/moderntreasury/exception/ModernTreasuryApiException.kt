@@ -11,7 +11,7 @@ private val logger = LoggerFactory.getLogger(ModernTreasuryApiException::class.j
 /**
  * Represents an error returned by the ModernTreasury API.
  */
-class ModernTreasuryApiException(
+open class ModernTreasuryApiException(
     /**
      * The HTTP Status code on the response
      */
@@ -52,7 +52,12 @@ fun Response.toModernTreasuryException(reader: ObjectReader): ModernTreasuryApiE
         logger.warn("could not parse Modern Treasury error response: $responseBody. ${e.message}")
         ModernTreasuryErrorBody(null, null, null)
     }
-    return ModernTreasuryApiException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
+
+    return if (statusCode == 409 && errors.parameter == "version") {
+        LedgerAccountVersionConflictException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
+    } else {
+        ModernTreasuryApiException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
+    }
 }
 
 @JsonRootName("errors")
