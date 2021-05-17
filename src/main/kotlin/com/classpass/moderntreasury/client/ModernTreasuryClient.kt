@@ -1,20 +1,23 @@
 package com.classpass.moderntreasury.client
 
-import com.classpass.clients.deserialize2xx
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
+import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.classpass.moderntreasury.exception.toModernTreasuryException
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerTransaction
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
+import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.NormalBalanceType
+import com.classpass.moderntreasury.model.extractPageInfo
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
+import com.classpass.moderntreasury.model.request.toQueryParams
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -28,6 +31,7 @@ import com.google.common.util.concurrent.RateLimiter
 import org.asynchttpclient.AsyncHttpClient
 import org.asynchttpclient.BoundRequestBuilder
 import org.asynchttpclient.Dsl
+import org.asynchttpclient.Response
 import java.io.Closeable
 import java.time.Duration
 import java.time.LocalDate
@@ -69,6 +73,14 @@ interface ModernTreasuryClient : Closeable {
          */
         id: String
     ): CompletableFuture<LedgerTransaction>
+
+    fun getLedgerTransactions(
+        ledgerId: String? = null,
+        /**
+         * Key/Value metadata pairs to search transactions for.
+         */
+        metadata: Map<String, String> = emptyMap()
+    ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>>
 
     fun createLedgerTransaction(
         effectiveDate: LocalDate,
@@ -193,6 +205,17 @@ internal class AsyncModernTreasuryClient(
     override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> =
         get("/ledger_transactions/$id")
 
+    override fun getLedgerTransactions(
+        ledgerId: String?,
+        metadata: Map<String, String>
+    ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
+        val queryParams = mapOf(
+            "ledger_id" to listOfNotNull(ledgerId),
+        ).plus(metadata.toQueryParams())
+
+        return getPaginated("/ledger_transactions", queryParams)
+    }
+
     override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
         post("/ledger_transactions", request)
 
@@ -203,10 +226,17 @@ internal class AsyncModernTreasuryClient(
         return get("/ping")
     }
 
-    private inline fun <reified R> get(
+    internal inline fun <reified R> get(
         endpoint: String,
         queryParams: Map<String, List<String>> = emptyMap()
     ) = executeRequest<R> {
+        prepareGet("$baseUrl$endpoint").setQueryParams(queryParams)
+    }
+
+    internal inline fun <reified R> getPaginated(
+        endpoint: String,
+        queryParams: Map<String, List<String>> = emptyMap()
+    ) = executePaginatedRequest<R> {
         prepareGet("$baseUrl$endpoint").setQueryParams(queryParams)
     }
 
@@ -231,19 +261,35 @@ internal class AsyncModernTreasuryClient(
 
     internal inline fun <reified T> executeRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
-    ): CompletableFuture<T> {
-        val typeRef = jacksonTypeRef<T>()
+    ) = sendRequest(block).thenApply<T>(this::deserializeResponse)
+
+    internal inline fun <reified T> executePaginatedRequest(
+        crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
+    ) = sendRequest(block).thenApply<ModernTreasuryPage<T>>(this::deserializePaginatedResponse)
+
+    internal inline fun sendRequest(
+        crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
+    ): CompletableFuture<Response> {
         return CompletableFuture.supplyAsync {
             if (!rateLimiter.tryAcquire(Duration.ofMillis(rateLimitTimeoutMs))) {
                 throw RateLimitTimeoutException(rateLimitTimeoutMs)
             }
-        }.thenCompose {
-            val requestBuilder = block.invoke(httpClient)
-            requestBuilder.execute()
-                .deserialize2xx(typeRef, objectReader) {
-                    throw it.toModernTreasuryException(objectReader)
-                }
+            val response = block.invoke(httpClient).execute().get()
+            if (response.statusCode in 200..299) {
+                response
+            } else {
+                throw response.toModernTreasuryException(objectReader)
+            }
         }
+    }
+
+    internal inline fun <reified T> deserializeResponse(response: Response): T =
+        objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
+
+    internal inline fun <reified T> deserializePaginatedResponse(response: Response): ModernTreasuryPage<T> {
+        val content = deserializeResponse<List<T>>(response)
+        val pageInfo = response.extractPageInfo() ?: throw MissingPaginationHeadersException(response)
+        return ModernTreasuryPage(pageInfo, content)
     }
 
     /**

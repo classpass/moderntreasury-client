@@ -117,4 +117,10 @@ open class WireMockClientTest {
         }
         """
     )
+
+    protected val ledgerTransactionsListResponse = ok(
+        ledgerTransactionResponse.build().body.let { responseElement ->
+            "[$responseElement, $responseElement, $responseElement]"
+        }
+    )
 }
