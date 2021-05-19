@@ -24,11 +24,9 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.CompletableFuture.failedFuture
 
-class FakeClient : ModernTreasuryClient {
-    constructor(clock: Clock) {
-        this.clock = clock
-    }
-    val clock: Clock
+class FakeClient
+constructor(val clock: Clock)
+: ModernTreasuryClient {
     val accounts: MutableMap<String, LedgerAccount> = mutableMapOf()
     val ledgers: MutableMap<String, Ledger> = mutableMapOf()
     val transactions: MutableList<LedgerTransaction> = mutableListOf()
