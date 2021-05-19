@@ -62,7 +62,7 @@ tasks.withType<KotlinCompile>() {
 }
 
 task("sandbox-test", JavaExec::class) {
-    main="com.classpass.moderntreasury.SandboxTest"
+    main = "com.classpass.moderntreasury.SandboxTest"
     classpath = sourceSets["main"].runtimeClasspath
 }
 
@@ -86,7 +86,7 @@ configure<PublishingExtension> {
             }
         }
 
-    // if we're publishing artifacts, add the repo to write to
+        // if we're publishing artifacts, add the repo to write to
         repositories {
             maven {
                 name = "jenkinsLocal"
