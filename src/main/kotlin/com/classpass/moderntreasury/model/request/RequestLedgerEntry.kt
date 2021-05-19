@@ -15,5 +15,5 @@ data class RequestLedgerEntry(
      * the current version of the associated account. If two requests to create a transaction happen simultaneously that
      * both try to take out a "lock" against the same account, only one request will succeed.
      */
-    val lockVersion: Int? = null
+    val lockVersion: Long? = null
 )

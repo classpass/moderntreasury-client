@@ -28,7 +28,7 @@ data class LedgerEntry(
      * ledger transaction and wants to assert that the ledger account's state hasn't changed since the last read, it can
      * optionally pass version into the create call for each ledger entry.
      */
-    val lockVersion: Int?,
+    val lockVersion: Long?,
     /**
      * This field will be true if this object was created with a production API key or false if created with a test API
      * key.
