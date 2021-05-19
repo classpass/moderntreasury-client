@@ -24,6 +24,12 @@ data class LedgerEntry(
      */
     val amount: Long,
     /**
+     * an integer that is incremented every time a transaction is posted to the account. When the client is creating a
+     * ledger transaction and wants to assert that the ledger account's state hasn't changed since the last read, it can
+     * optionally pass version into the create call for each ledger entry.
+     */
+    val lockVersion: Int?,
+    /**
      * This field will be true if this object was created with a production API key or false if created with a test API
      * key.
      */
