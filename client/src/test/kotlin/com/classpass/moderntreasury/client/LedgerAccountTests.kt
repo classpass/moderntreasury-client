@@ -24,7 +24,9 @@ class LedgerAccountTests : WireMockClientTest() {
         stubFor(get(urlMatching("/ledger_accounts/.+/balance")).willReturn(ledgerAccountBalanceResponse))
         val expectedDeserialized = LedgerAccountBalance(
             pending = listOf(LedgerAccountBalanceItem(6, 23, -17, "USD")),
-            posted = listOf(LedgerAccountBalanceItem(0, 11, -11, "USD"))
+            posted = listOf(LedgerAccountBalanceItem(0, 11, -11, "USD")),
+            pendingBalance = LedgerAccountBalanceItem(6, 23, -17, "USD"),
+            postedBalance = LedgerAccountBalanceItem(0, 11, -11, "USD")
         )
         val actual = client.getLedgerAccountBalance(LedgerAccountId(UUID.randomUUID())).get()
         assertThat(actual).isEqualTo(expectedDeserialized)

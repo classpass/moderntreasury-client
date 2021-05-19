@@ -79,7 +79,20 @@ open class WireMockClientTest {
               "amount": -11,
               "currency": "USD"
             }
-          ]
+          ],
+          "pending_balance": {
+              "credits": 6,
+              "debits": 23,
+              "amount": -17,
+              "currency": "USD"
+          } ,
+          "posted_balance": {
+              "credits": 0,
+              "debits": 11,
+              "amount": -11,
+              "currency": "USD"
+          }
+
         }    
         """
     )
