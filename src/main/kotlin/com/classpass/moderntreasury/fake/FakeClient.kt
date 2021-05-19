@@ -5,11 +5,14 @@ import com.classpass.moderntreasury.exception.ModernTreasuryClientException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerAccountBalanceItem
 import com.classpass.moderntreasury.model.LedgerEntry
+import com.classpass.moderntreasury.model.LedgerEntryDirection
 import com.classpass.moderntreasury.model.LedgerTransaction
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.ModernTreasuryPageInfo
+import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
@@ -25,11 +28,18 @@ import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.CompletableFuture.failedFuture
 
 class FakeClient
-constructor(val clock: Clock)
-: ModernTreasuryClient {
-    val accounts: MutableMap<String, LedgerAccount> = mutableMapOf()
-    val ledgers: MutableMap<String, Ledger> = mutableMapOf()
-    val transactions: MutableList<LedgerTransaction> = mutableListOf()
+constructor(val clock: Clock) :
+    ModernTreasuryClient {
+    private val accounts: MutableMap<String, LedgerAccount> = mutableMapOf()
+    private val ledgers: MutableMap<String, Ledger> = mutableMapOf()
+    private val transactions: MutableList<LedgerTransaction> = mutableListOf()
+
+    /**
+     * For test purposes, permit to clear all transactions.
+     */
+    fun clearAllTransactions() {
+        transactions.removeAll { true }
+    }
 
     override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> {
         val ledger = request.reify(makeId())
@@ -39,7 +49,7 @@ constructor(val clock: Clock)
 
     override fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount> {
         val ledger = ledgers[request.ledgerId]
-            ?: return failedFuture(ModernTreasuryClientException("Not Found"))
+            ?: return failedFuture(ModernTreasuryClientException("Ledger Not Found"))
 
         val account = request.reify(makeId(), ledger.id)
         accounts.put(account.id, account)
@@ -47,12 +57,25 @@ constructor(val clock: Clock)
     }
 
     override fun getLedgerAccountBalance(ledgerAccountId: String, asOfDate: LocalDate?): CompletableFuture<LedgerAccountBalance> {
-        TODO("Not yet implemented")
+        val account = accounts[ledgerAccountId]
+            ?: return failedFuture(ModernTreasuryClientException("Ledger Account Not Found"))
+
+        val ledger = ledgers[account.ledgerId]
+            ?: return failedFuture(ModernTreasuryClientException("Ledger Not Found"))
+
+        val tally = Tally(account.id, account.normalBalance)
+
+        transactions
+            .filter { transaction -> transaction.ledgerId == ledger.id } // Skip many transactions; Optional, however.
+            .filter { transaction -> transaction.status != LedgerTransactionStatus.ARCHIVED }
+            .forEach { transaction -> tally.add(transaction) }
+
+        return completedFuture(tally.balance(ledger.currency))
     }
 
     override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> {
         val transaction = transactions.find { it.id == id }
-            ?: return failedFuture(ModernTreasuryClientException("Not Found"))
+            ?: return failedFuture(ModernTreasuryClientException("Transaction Not Found"))
         return completedFuture(transaction)
     }
 
@@ -74,7 +97,9 @@ constructor(val clock: Clock)
 
         val ledgerEntries = request.ledgerEntries.map { it.reify(makeId()) }
 
-        // TODO: validate the transaction.
+        val debits = ledgerEntries.fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.DEBIT) it.amount else 0 }
+        val credits = ledgerEntries.fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.CREDIT) it.amount else 0 }
+        require(debits == credits)
 
         val transaction = LedgerTransaction(
             id = makeId(),
@@ -96,7 +121,31 @@ constructor(val clock: Clock)
     }
 
     override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> {
+        val transaction = transactions.find { it.id == request.id }
+            ?: return failedFuture(ModernTreasuryClientException("Not Found"))
+
+        if (transaction.status != LedgerTransactionStatus.PENDING)
+            return failedFuture(ModernTreasuryClientException("Invalid State"))
+
+        val ledgerEntries = request.ledgerEntries ?.map { it.reify(makeId()) }
+
+        val metadata = transaction.metadata
+            // Remove entries which are specifically set to null in the request.
+            .filterNot { request.metadata.containsKey(it.key) && request.metadata[it.key] == null }
+            // Override previous values with values from the request.
+            .mapValues { (k, v) -> request.metadata[k] ?: transaction.metadata[k]!! }
+
+        val updated = transaction.copy(
+            description = request.description ?: transaction.description,
+            status = request.status ?: transaction.status,
+            ledgerEntries = ledgerEntries ?: transaction.ledgerEntries,
+            metadata = metadata
+        )
+
+        // TODO validate the update
         TODO("Not yet implemented")
+        transactions.remove(transaction)
+        transactions.add(updated)
     }
 
     override fun ping(): CompletableFuture<Map<String, String>> =
@@ -104,6 +153,46 @@ constructor(val clock: Clock)
 
     // java.io.Closeable
     override fun close() {}
+}
+
+/**
+ * Calculate a running tally of transactions across one ledger account.
+ */
+class Tally
+constructor(val accountId: String, val balanceType: NormalBalanceType) {
+    var pendingDebits = 0L
+    var postedDebits = 0L
+    var pendingCredits = 0L
+    var postedCredits = 0L
+
+    fun balance(): Pair<Long, Long> {
+        return Pair(
+            balanceType.amount(pendingDebits, pendingCredits),
+            balanceType.amount(postedDebits, postedCredits)
+        )
+    }
+
+    fun balance(currency: String) = balance().let { balance ->
+        LedgerAccountBalance(
+            pending = listOf(LedgerAccountBalanceItem(pendingCredits, pendingDebits, balance.first, currency)),
+            posted = listOf(LedgerAccountBalanceItem(postedCredits, postedDebits, balance.second, currency))
+        )
+    }
+
+    fun add(transaction: LedgerTransaction) {
+        if (transaction.status == LedgerTransactionStatus.ARCHIVED)
+            return
+
+        val entry = transaction.ledgerEntries.find { it.ledgerAccountId == accountId }
+            ?: return
+
+        val amount = entry.amount
+        if (transaction.status == LedgerTransactionStatus.PENDING) {
+            if (entry.direction == LedgerEntryDirection.CREDIT) pendingCredits += amount else pendingDebits += amount
+        } else if (transaction.status == LedgerTransactionStatus.POSTED) {
+            if (entry.direction == LedgerEntryDirection.CREDIT) postedCredits += amount else postedDebits += amount
+        }
+    }
 }
 
 private val LIVEMODE = false
@@ -135,3 +224,11 @@ private fun CreateLedgerRequest.reify(id: String) =
 
 private fun RequestLedgerEntry.reify(id: String) =
     LedgerEntry(id = id, ledgerAccountId = this.ledgerAccountId, direction = this.direction, amount = this.amount, liveMode = LIVEMODE)
+
+/**
+ * If an account is credit normal, then a "negative" balance would be one where the debit balance exceeds the credit balance.
+ *
+ * N.B. It seems potentially error-prone to have two similar arguments of the same type.
+ */
+fun NormalBalanceType.amount(debits: Long, credits: Long) =
+    if (this == NormalBalanceType.CREDIT) credits - debits else debits - credits
