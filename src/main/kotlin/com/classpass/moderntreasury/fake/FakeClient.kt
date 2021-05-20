@@ -43,7 +43,7 @@ constructor(val clock: Clock) :
 
     override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> {
         val ledger = request.reify(makeId())
-        ledgers.put(ledger.id, ledger)
+        ledgers[ledger.id] = ledger
         return completedFuture(ledger)
     }
 
@@ -52,7 +52,7 @@ constructor(val clock: Clock) :
             ?: return failedFuture(ModernTreasuryClientException("Ledger Not Found"))
 
         val account = request.reify(makeId(), ledger.id)
-        accounts.put(account.id, account)
+        accounts[account.id] = account
         return completedFuture(account)
     }
 
@@ -80,7 +80,7 @@ constructor(val clock: Clock) :
     }
 
     override fun getLedgerTransactions(ledgerId: String?, metadata: Map<String, String>): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
-        val content = transactions.filter { it ->
+        val content = transactions.filter {
             (ledgerId != null && it.ledgerId == ledgerId) || metadata matches it.metadata
         }
         return completedFuture(ModernTreasuryPage(PageInfo(0, content.size, content.size), content))
@@ -133,7 +133,7 @@ constructor(val clock: Clock) :
             // Remove entries which are specifically set to null in the request.
             .filterNot { request.metadata.containsKey(it.key) && request.metadata[it.key] == null }
             // Override previous values with values from the request.
-            .mapValues { (k, v) -> request.metadata[k] ?: transaction.metadata[k]!! }
+            .mapValues { (k, _) -> request.metadata[k] ?: transaction.metadata[k]!! }
 
         val updated = transaction.copy(
             description = request.description ?: transaction.description,
@@ -142,10 +142,12 @@ constructor(val clock: Clock) :
             metadata = metadata
         )
 
+        // TODO merge entries?
         // TODO validate the update
-        TODO("Not yet implemented")
+
         transactions.remove(transaction)
         transactions.add(updated)
+        TODO("Not yet implemented")
     }
 
     override fun ping(): CompletableFuture<Map<String, String>> =
@@ -195,12 +197,12 @@ constructor(val accountId: String, val balanceType: NormalBalanceType) {
     }
 }
 
-private val LIVEMODE = false
+private const val LIVEMODE = false
 
 private fun makeId() = UUID.randomUUID().toString()
 
 private fun RequestMetadata.filterNonNullKeys() =
-    this.filter { (k, v) -> v != null }.toMap() as Map<String, String>
+    this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
 
 /**
  * this matches other if all for all keys in this map, the value exists and matches in other.
@@ -208,7 +210,7 @@ private fun RequestMetadata.filterNonNullKeys() =
  * Note that (a matches b) does NOT imply (b matches a).
  */
 private infix fun <K, V> Map<K, V>.matches(other: Map<K, V>) =
-    this.all { (k, v) -> other.containsKey(k) && this[k] == other[k] }
+    this.all { (k, _) -> other.containsKey(k) && this[k] == other[k] }
 
 private data class PageInfo(
     override val page: Int,
@@ -220,7 +222,7 @@ private fun CreateLedgerAccountRequest.reify(ledgerAccountId: String, ledgerId: 
     LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, this.metadata.filterNonNullKeys(), LIVEMODE)
 
 private fun CreateLedgerRequest.reify(id: String) =
-    Ledger(makeId(), this.name, this.description, this.currency, this.metadata.filterNonNullKeys(), LIVEMODE)
+    Ledger(id, this.name, this.description, this.currency, this.metadata.filterNonNullKeys(), LIVEMODE)
 
 private fun RequestLedgerEntry.reify(id: String) =
     LedgerEntry(id = id, ledgerAccountId = this.ledgerAccountId, direction = this.direction, amount = this.amount, liveMode = LIVEMODE)
