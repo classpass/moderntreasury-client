@@ -58,6 +58,7 @@ class LedgerAccountTests : WireMockClientTest() {
             ledgerId = "89c8-xxxxx",
             description = null,
             normalBalance = NormalBalanceType.DEBIT,
+            lockVersion = 23,
             metadata = emptyMap(),
             liveMode = true,
         )

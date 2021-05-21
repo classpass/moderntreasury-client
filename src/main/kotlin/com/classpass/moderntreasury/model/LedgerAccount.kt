@@ -29,6 +29,10 @@ data class LedgerAccount(
      */
     val ledgerId: String,
     /**
+     * an integer that is incremented every time a transaction is posted to the account.
+     */
+    val lockVersion: Long,
+    /**
      * Additional data represented as key-value pairs. Both the key and value must be strings. See
      * https://docs.moderntreasury.com/reference#metadata.
      */

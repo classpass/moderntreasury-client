@@ -63,6 +63,7 @@ internal class AsyncModernTreasuryClient(
     private val objectMapper: ObjectMapper = JsonMapper.builder()
         .addModules(KotlinModule(), JavaTimeModule())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true)
         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
         .enable(MapperFeature.BLOCK_UNSAFE_POLYMORPHIC_BASE_TYPES)
@@ -73,6 +74,9 @@ internal class AsyncModernTreasuryClient(
     override fun createLedgerAccount(
         request: CreateLedgerAccountRequest
     ): CompletableFuture<LedgerAccount> = post("/ledger_accounts", request)
+
+    override fun getLedgerAccount(ledgerAccountId: String): CompletableFuture<LedgerAccount> =
+        get("/ledger_accounts/$ledgerAccountId")
 
     override fun getLedgerAccountBalance(
         ledgerAccountId: String,

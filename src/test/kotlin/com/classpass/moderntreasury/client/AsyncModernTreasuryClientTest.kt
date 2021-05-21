@@ -6,11 +6,14 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isEqualToWithGivenProperties
 import assertk.assertions.isFailure
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
 import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.request.IdempotentRequest
+import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.github.tomakehurst.wiremock.client.BasicCredentials
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
@@ -24,6 +27,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.verify
 import com.github.tomakehurst.wiremock.http.HttpHeaders
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import kotlin.test.assertFails
 
 class AsyncModernTreasuryClientTest : WireMockClientTest() {
     @Test
@@ -124,5 +128,31 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
         assertThat { client.getLedgerTransactions("foo").get() }.isFailure()
             .transform { it.cause!! }
             .isInstanceOf(MissingPaginationHeadersException::class.java)
+    }
+
+    // Prevents null values for primitive fields being silently coerced to 0
+    @Test
+    fun `missing primitive fields in deserialization throws exceptions`() {
+        val badResponse: ResponseDefinitionBuilder = ok(
+            """
+            {
+                "id": "f1c7-xxxxx",
+                "object": "ledger_account",
+                "name": "Operating Bank Account",
+                "ledger_id": "89c8-xxxxx",
+                "description": null,
+                "normal_balance": "debit",
+                "metadata": {},
+                "live_mode": true,
+                "created_at": "2020-08-04T16:54:32Z",
+                "updated_at": "2020-08-04T16:54:32Z"
+            }
+        """
+        )
+
+        stubFor(get(anyUrl()).willReturn(badResponse))
+
+        val thrown = assertFails { client.getLedgerAccount("123").get() }
+        assertThat(thrown.cause).isNotNull().isInstanceOf(MismatchedInputException::class)
     }
 }

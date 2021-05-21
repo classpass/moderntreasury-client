@@ -39,6 +39,8 @@ interface ModernTreasuryClient : Closeable {
         )
     )
 
+    fun getLedgerAccount(ledgerAccountId: String): CompletableFuture<LedgerAccount>
+
     fun getLedgerAccountBalance(
         ledgerAccountId: String,
         /**
