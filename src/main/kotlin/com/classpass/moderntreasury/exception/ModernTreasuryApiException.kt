@@ -53,12 +53,15 @@ fun Response.toModernTreasuryException(reader: ObjectReader): ModernTreasuryApiE
         ModernTreasuryErrorBody(null, null, null)
     }
 
-    return if (statusCode == 409 && errors.parameter == "version") {
+    return if (statusCode == 422 && errors.message == VERSION_CONFLICT_MESSAGE) {
         LedgerAccountVersionConflictException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
     } else {
         ModernTreasuryApiException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
     }
 }
+
+private const val VERSION_CONFLICT_MESSAGE =
+    "The ledger transaction write failed because at least one of the provided ledger account versions is incorrect"
 
 @JsonRootName("errors")
 private data class ModernTreasuryErrorBody(
