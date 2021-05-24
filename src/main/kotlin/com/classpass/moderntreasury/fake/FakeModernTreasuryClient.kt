@@ -55,7 +55,7 @@ constructor(val clock: Clock) :
         val ledger = ledgers[request.ledgerId]
             ?: fail("Ledger Not Found")
 
-        val account = request.reify(makeId(), ledger.id)
+        val account = request.reify(makeId(), ledger.id, LOCKVERSION)
         accounts[account.id] = account
         account
     }
@@ -99,7 +99,7 @@ constructor(val clock: Clock) :
         val ledgerAccount1 = accounts[ledgerAccountId1]
             ?: fail("Ledger Account Not Found")
 
-        val ledgerEntries = request.ledgerEntries.map { it.reify(makeId()) }.also { it.validate() }
+        val ledgerEntries = request.ledgerEntries.map { it.reify(makeId(), LOCKVERSION) }.also { it.validate() }
 
         val transaction = LedgerTransaction(
             id = makeId(),
@@ -127,7 +127,7 @@ constructor(val clock: Clock) :
         if (transaction.status != LedgerTransactionStatus.PENDING)
             fail("Invalid State")
 
-        val ledgerEntries = request.ledgerEntries?.map { it.reify(makeId()) }?.also { it.validate() }
+        val ledgerEntries = request.ledgerEntries?.map { it.reify(makeId(), LOCKVERSION) }?.also { it.validate() }
 
         val metadata = transaction.metadata
             // Remove entries which are specifically set to null in the request.
@@ -219,14 +219,14 @@ private data class PageInfo(
     override val totalCount: Int
 ) : ModernTreasuryPageInfo
 
-private fun CreateLedgerAccountRequest.reify(ledgerAccountId: String, ledgerId: String) =
-    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, LOCKVERSION, this.metadata.filterNonNullValues(), LIVEMODE)
+private fun CreateLedgerAccountRequest.reify(ledgerAccountId: String, ledgerId: String, lockVersion: Long) =
+    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, lockVersion, this.metadata.filterNonNullValues(), LIVEMODE)
 
 private fun CreateLedgerRequest.reify(id: String) =
     Ledger(id, this.name, this.description, this.currency, this.metadata.filterNonNullValues(), LIVEMODE)
 
-private fun RequestLedgerEntry.reify(id: String) =
-    LedgerEntry(id, this.ledgerAccountId, this.direction, this.amount, LOCKVERSION, LIVEMODE)
+private fun RequestLedgerEntry.reify(id: String, lockVersion: Long) =
+    LedgerEntry(id, this.ledgerAccountId, this.direction, this.amount, lockVersion, LIVEMODE)
 
 /**
  * If an account is credit normal, then a "negative" balance would be one where the debit balance exceeds the credit balance.
