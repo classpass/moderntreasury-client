@@ -91,36 +91,35 @@ constructor(val clock: Clock) :
         return completedFuture(ModernTreasuryPage(PageInfo(0, content.size, content.size), content))
     }
 
-    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
-        supplyAsync {
-            val metadata = request.metadata.filterNonNullValues()
-            val status = request.status ?: LedgerTransactionStatus.PENDING
-            val nowLocalTZ = ZonedDateTime.now()
-            val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
-            val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
-            val ledgerAccount1 = accounts[ledgerAccountId1]
-                ?: throw ModernTreasuryApiException(404, null, null, "Ledger Account Not Found", null)
+    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> = supplyAsync {
+        val metadata = request.metadata.filterNonNullValues()
+        val status = request.status ?: LedgerTransactionStatus.PENDING
+        val nowLocalTZ = ZonedDateTime.now()
+        val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
+        val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
+        val ledgerAccount1 = accounts[ledgerAccountId1]
+            ?: throw ModernTreasuryApiException(404, null, null, "Ledger Account Not Found", null)
 
-            val ledgerEntries = request.ledgerEntries.map { it.reify(makeId()) }.also { it.validate() }
+        val ledgerEntries = request.ledgerEntries.map { it.reify(makeId()) }.also { it.validate() }
 
-            val transaction = LedgerTransaction(
-                id = makeId(),
-                description = request.description,
-                status = status,
-                metadata = metadata,
-                ledgerEntries = ledgerEntries,
-                postedAt = postedAt,
-                effectiveDate = nowLocalTZ.toLocalDate(),
-                ledgerId = ledgerAccount1.ledgerId,
-                ledgerableType = null,
-                ledgerableId = null,
-                request.externalId,
-                LIVEMODE
-            )
+        val transaction = LedgerTransaction(
+            id = makeId(),
+            description = request.description,
+            status = status,
+            metadata = metadata,
+            ledgerEntries = ledgerEntries,
+            postedAt = postedAt,
+            effectiveDate = nowLocalTZ.toLocalDate(),
+            ledgerId = ledgerAccount1.ledgerId,
+            ledgerableType = null,
+            ledgerableId = null,
+            request.externalId,
+            LIVEMODE
+        )
 
-            transactions.add(transaction)
-            transaction
-        }
+        transactions.add(transaction)
+        transaction
+    }
 
     override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> = supplyAsync {
         val transaction = transactions.find { it.id == request.id }
