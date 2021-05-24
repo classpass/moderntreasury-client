@@ -1,7 +1,7 @@
 package com.classpass.moderntreasury.fake
 
 import com.classpass.moderntreasury.client.ModernTreasuryClient
-import com.classpass.moderntreasury.exception.ModernTreasuryClientException
+import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
@@ -49,7 +49,7 @@ constructor(val clock: Clock) :
 
     override fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount> {
         val ledger = ledgers[request.ledgerId]
-            ?: return failedFuture(ModernTreasuryClientException("Ledger Not Found"))
+            ?: return failedFuture("Ledger Not Found")
 
         val account = request.reify(makeId(), ledger.id)
         accounts[account.id] = account
@@ -58,12 +58,12 @@ constructor(val clock: Clock) :
 
     override fun getLedgerAccountBalance(ledgerAccountId: String, asOfDate: LocalDate?): CompletableFuture<LedgerAccountBalance> {
         val account = accounts[ledgerAccountId]
-            ?: return failedFuture(ModernTreasuryClientException("Ledger Account Not Found"))
+            ?: return failedFuture("Ledger Account Not Found")
 
         val ledger = ledgers[account.ledgerId]
-            ?: return failedFuture(ModernTreasuryClientException("Ledger Not Found"))
+            ?: return failedFuture("Ledger Not Found")
 
-        val tally = Tally(account.id, account.normalBalance)
+        val tally = Accumulator(account.id, account.normalBalance)
 
         transactions
             .filter { transaction -> transaction.ledgerId == ledger.id } // Skip many transactions; Optional, however.
@@ -75,7 +75,7 @@ constructor(val clock: Clock) :
 
     override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> {
         val transaction = transactions.find { it.id == id }
-            ?: return failedFuture(ModernTreasuryClientException("Transaction Not Found"))
+            ?: return failedFuture("Transaction Not Found")
         return completedFuture(transaction)
     }
 
@@ -87,13 +87,13 @@ constructor(val clock: Clock) :
     }
 
     override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> {
-        val metadata = request.metadata.filterNonNullKeys()
+        val metadata = request.metadata.filterNonNullValues()
         val status = request.status ?: LedgerTransactionStatus.PENDING
         val nowLocalTZ = ZonedDateTime.now()
         val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
         val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
         val ledgerAccount1 = accounts[ledgerAccountId1]
-            ?: return failedFuture(ModernTreasuryClientException("Ledger Account Not Found"))
+            ?: return failedFuture("Ledger Account Not Found")
 
         val ledgerEntries = request.ledgerEntries.map { it.reify(makeId()) }
 
@@ -122,10 +122,10 @@ constructor(val clock: Clock) :
 
     override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> {
         val transaction = transactions.find { it.id == request.id }
-            ?: return failedFuture(ModernTreasuryClientException("Not Found"))
+            ?: return failedFuture("Not Found")
 
         if (transaction.status != LedgerTransactionStatus.PENDING)
-            return failedFuture(ModernTreasuryClientException("Invalid State"))
+            return failedFuture("Invalid State")
 
         val ledgerEntries = request.ledgerEntries ?.map { it.reify(makeId()) }
 
@@ -160,7 +160,7 @@ constructor(val clock: Clock) :
 /**
  * Calculate a running tally of transactions across one ledger account.
  */
-class Tally
+class Accumulator
 constructor(val accountId: String, val balanceType: NormalBalanceType) {
     var pendingDebits = 0L
     var postedDebits = 0L
@@ -201,8 +201,12 @@ private const val LIVEMODE = false
 
 private fun makeId() = UUID.randomUUID().toString()
 
-private fun RequestMetadata.filterNonNullKeys() =
+@Suppress("UNCHECKED_CAST")
+private fun RequestMetadata.filterNonNullValues() =
     this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
+
+private fun <T> failedFuture(message: String) =
+    CompletableFuture.failedFuture<T>(ModernTreasuryApiException(400, null, null, message, null))
 
 /**
  * this matches other if all for all keys in this map, the value exists and matches in other.
@@ -219,10 +223,10 @@ private data class PageInfo(
 ) : ModernTreasuryPageInfo
 
 private fun CreateLedgerAccountRequest.reify(ledgerAccountId: String, ledgerId: String) =
-    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, this.metadata.filterNonNullKeys(), LIVEMODE)
+    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, this.metadata.filterNonNullValues(), LIVEMODE)
 
 private fun CreateLedgerRequest.reify(id: String) =
-    Ledger(id, this.name, this.description, this.currency, this.metadata.filterNonNullKeys(), LIVEMODE)
+    Ledger(id, this.name, this.description, this.currency, this.metadata.filterNonNullValues(), LIVEMODE)
 
 private fun RequestLedgerEntry.reify(id: String) =
     LedgerEntry(id = id, ledgerAccountId = this.ledgerAccountId, direction = this.direction, amount = this.amount, liveMode = LIVEMODE)
