@@ -95,11 +95,17 @@ constructor(val clock: Clock) :
         val status = request.status ?: LedgerTransactionStatus.PENDING
         val nowLocalTZ = ZonedDateTime.now()
         val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
+
+        // Use first entry to find the ledger.
         val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
         val ledgerAccount1 = accounts[ledgerAccountId1]
             ?: fail("Ledger Account Not Found")
 
         val ledgerEntries = request.ledgerEntries.map { it.reify(makeId(), LOCKVERSION) }.also { it.validate() }
+
+        val ledgerId1 = ledgerAccount1.ledgerId
+        ledgerEntries.all { ledgerId1 == accounts[it.ledgerAccountId]?.ledgerId } || fail("Inconsistent Ledger Usage")
+        ledgerEntries.all { it.amount >= 0 } || fail("Non-Negative Amounts") // MIGHT not be correct.
 
         val transaction = LedgerTransaction(
             id = makeId(),
