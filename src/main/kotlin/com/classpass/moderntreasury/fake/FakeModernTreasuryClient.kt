@@ -102,7 +102,7 @@ constructor(val clock: Clock) :
 
         val debits = ledgerEntries.fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.DEBIT) it.amount else 0 }
         val credits = ledgerEntries.fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.CREDIT) it.amount else 0 }
-        require(debits == credits)
+        if (debits != credits) return failedFuture("Unbalanced Transaction")
 
         val transaction = LedgerTransaction(
             id = makeId(),
