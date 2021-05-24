@@ -2,6 +2,7 @@ package com.classpass.moderntreasury.fake
 
 import com.classpass.moderntreasury.client.ModernTreasuryClient
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
+import com.classpass.moderntreasury.exception.ModernTreasuryClientException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
@@ -26,6 +27,7 @@ import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.CompletableFuture.failedFuture
+import java.util.concurrent.CompletableFuture.supplyAsync
 
 class FakeModernTreasuryClient
 constructor(val clock: Clock) :
@@ -89,48 +91,45 @@ constructor(val clock: Clock) :
         return completedFuture(ModernTreasuryPage(PageInfo(0, content.size, content.size), content))
     }
 
-    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> {
-        val metadata = request.metadata.filterNonNullValues()
-        val status = request.status ?: LedgerTransactionStatus.PENDING
-        val nowLocalTZ = ZonedDateTime.now()
-        val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
-        val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
-        val ledgerAccount1 = accounts[ledgerAccountId1]
-            ?: return failedFuture("Ledger Account Not Found")
+    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
+        supplyAsync {
+            val metadata = request.metadata.filterNonNullValues()
+            val status = request.status ?: LedgerTransactionStatus.PENDING
+            val nowLocalTZ = ZonedDateTime.now()
+            val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
+            val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
+            val ledgerAccount1 = accounts[ledgerAccountId1]
+                ?: throw ModernTreasuryApiException(404, null, null, "Ledger Account Not Found", null)
 
-        val ledgerEntries = request.ledgerEntries.map { it.reify(makeId()) }
+            val ledgerEntries = request.ledgerEntries.map { it.reify(makeId()) }.also { it.validate() }
 
-        val debits = ledgerEntries.fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.DEBIT) it.amount else 0 }
-        val credits = ledgerEntries.fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.CREDIT) it.amount else 0 }
-        if (debits != credits) return failedFuture("Unbalanced Transaction")
+            val transaction = LedgerTransaction(
+                id = makeId(),
+                description = request.description,
+                status = status,
+                metadata = metadata,
+                ledgerEntries = ledgerEntries,
+                postedAt = postedAt,
+                effectiveDate = nowLocalTZ.toLocalDate(),
+                ledgerId = ledgerAccount1.ledgerId,
+                ledgerableType = null,
+                ledgerableId = null,
+                request.externalId,
+                LIVEMODE
+            )
 
-        val transaction = LedgerTransaction(
-            id = makeId(),
-            description = request.description,
-            status = status,
-            metadata = metadata,
-            ledgerEntries = ledgerEntries,
-            postedAt = postedAt,
-            effectiveDate = nowLocalTZ.toLocalDate(),
-            ledgerId = ledgerAccount1.ledgerId,
-            ledgerableType = null,
-            ledgerableId = null,
-            request.externalId,
-            LIVEMODE
-        )
+            transactions.add(transaction)
+            transaction
+        }
 
-        transactions.add(transaction)
-        return completedFuture(transaction)
-    }
-
-    override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> {
+    override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> = supplyAsync {
         val transaction = transactions.find { it.id == request.id }
-            ?: return failedFuture("Not Found")
+            ?: throw ModernTreasuryClientException("Not Found")
 
         if (transaction.status != LedgerTransactionStatus.PENDING)
-            return failedFuture("Invalid State")
+            throw ModernTreasuryClientException("Invalid State")
 
-        val ledgerEntries = request.ledgerEntries ?.map { it.reify(makeId()) }
+        val ledgerEntries = request.ledgerEntries?.map { it.reify(makeId()) }?.also { it.validate() }
 
         val metadata = transaction.metadata
             // Remove entries which are specifically set to null in the request.
@@ -145,12 +144,9 @@ constructor(val clock: Clock) :
             metadata = metadata
         )
 
-        // TODO merge entries?
-        // TODO validate the update
-
         transactions.remove(transaction)
         transactions.add(updated)
-        TODO("Not yet implemented")
+        updated
     }
 
     override fun ping(): CompletableFuture<Map<String, String>> =
@@ -242,3 +238,14 @@ private fun RequestLedgerEntry.reify(id: String) =
  */
 fun NormalBalanceType.amount(debits: Long, credits: Long) =
     if (this == NormalBalanceType.CREDIT) credits - debits else debits - credits
+
+/**
+ * Ensure a list of ledger entries in a transaction is valid by requiring the credit balance to equal the debit balance
+ */
+private fun List<LedgerEntry>.validate() {
+    val debits = fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.DEBIT) it.amount else 0 }
+    val credits = fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.CREDIT) it.amount else 0 }
+    if (debits != credits) {
+        throw ModernTreasuryApiException(400, null, null, "Transaction debits balance must equal credit balance", "entries")
+    }
+}
