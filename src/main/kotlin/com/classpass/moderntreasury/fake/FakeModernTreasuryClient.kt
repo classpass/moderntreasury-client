@@ -47,6 +47,9 @@ constructor(val clock: Clock) :
         return completedFuture(ledger)
     }
 
+    override fun getLedgerAccount(ledgerAccountId: String): CompletableFuture<LedgerAccount> =
+        accounts[ledgerAccountId] ?. let { completedFuture(it) } ?: failedFuture("Ledger Account Not Found")
+
     override fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount> {
         val ledger = ledgers[request.ledgerId]
             ?: return failedFuture("Ledger Not Found")
