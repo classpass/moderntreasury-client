@@ -201,6 +201,7 @@ constructor(val accountId: String, val balanceType: NormalBalanceType) {
 }
 
 private const val LIVEMODE = false
+private const val LOCKVERSION = 0L
 
 private fun makeId() = UUID.randomUUID().toString()
 
@@ -226,13 +227,13 @@ private data class PageInfo(
 ) : ModernTreasuryPageInfo
 
 private fun CreateLedgerAccountRequest.reify(ledgerAccountId: String, ledgerId: String) =
-    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, this.metadata.filterNonNullValues(), LIVEMODE)
+    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, LOCKVERSION, this.metadata.filterNonNullValues(), LIVEMODE)
 
 private fun CreateLedgerRequest.reify(id: String) =
     Ledger(id, this.name, this.description, this.currency, this.metadata.filterNonNullValues(), LIVEMODE)
 
 private fun RequestLedgerEntry.reify(id: String) =
-    LedgerEntry(id = id, ledgerAccountId = this.ledgerAccountId, direction = this.direction, amount = this.amount, liveMode = LIVEMODE)
+    LedgerEntry(id, this.ledgerAccountId, this.direction, this.amount, LOCKVERSION, LIVEMODE)
 
 /**
  * If an account is credit normal, then a "negative" balance would be one where the debit balance exceeds the credit balance.
