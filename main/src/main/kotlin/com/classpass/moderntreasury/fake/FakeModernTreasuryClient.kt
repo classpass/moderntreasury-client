@@ -26,7 +26,6 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
-import java.util.concurrent.CompletableFuture.failedFuture
 import java.util.concurrent.CompletableFuture.supplyAsync
 
 class FakeModernTreasuryClient
