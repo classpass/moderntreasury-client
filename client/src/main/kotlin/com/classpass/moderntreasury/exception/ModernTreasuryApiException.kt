@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectReader
 import org.asynchttpclient.Response
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
 
 private val logger = LoggerFactory.getLogger(ModernTreasuryApiException::class.java)
 /**
