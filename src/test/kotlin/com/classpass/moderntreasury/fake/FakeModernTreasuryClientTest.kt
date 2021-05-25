@@ -40,7 +40,7 @@ class FakeModernTreasuryClientTest {
         val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
         val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
 
-        val tx1 = client.createLedgerTransaction(debit, credit)
+        client.createLedgerTransaction(debit, credit)
 
         val cash = client.getLedgerAccountBalance(usd_cash.id).get().pending[0].amount
         assertEquals(-100L, cash)
