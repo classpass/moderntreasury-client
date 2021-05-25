@@ -52,7 +52,7 @@ class FakeModernTreasuryClientTest {
         val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
 
         assertApiException("Transaction debits balance must equal credit balance") { client.createLedgerTransaction(oops, credit) }
-        }
+    }
 
     @Test
     fun `Can not make a transaction across ledgers`() {
@@ -61,6 +61,13 @@ class FakeModernTreasuryClientTest {
 
         assertApiException("Inconsistent Ledger Usage") { client.createLedgerTransaction(debit, credit) }
     }
+
+    @Test
+    fun `Can not make transactions with negative amounts`() {
+        val debit = RequestLedgerEntry(-100, LedgerEntryDirection.DEBIT, usd_cash.id)
+        val credit = RequestLedgerEntry(-100, LedgerEntryDirection.CREDIT, us_venue.id)
+
+        assertApiException("Non-Negative Amounts") { client.createLedgerTransaction(debit, credit) }
     }
 
     @Disabled("Idempotent support not yet merger")
