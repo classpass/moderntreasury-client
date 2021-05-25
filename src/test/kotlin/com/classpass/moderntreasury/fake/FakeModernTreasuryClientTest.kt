@@ -1,18 +1,20 @@
 package com.classpass.moderntreasury.fake
 
 import com.classpass.moderntreasury.client.ModernTreasuryClient
+import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerEntryDirection
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.assertThrows
 import java.time.Clock
 import java.time.LocalDate
-import kotlin.test.assertEquals
+import java.util.concurrent.ExecutionException
 
 val CLOCK = Clock.systemUTC()
 val NIK = "" // No idempotency key.
@@ -45,11 +47,10 @@ class FakeModernTreasuryClientTest {
 
     @Test
     fun `Forbids unbalanced transactions`() {
-        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
-        val oops = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, us_venue.id)
+        val oops = RequestLedgerEntry(90, LedgerEntryDirection.DEBIT, usd_cash.id)
+        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
 
-        assertThrows<Exception> {
-            client.createLedgerTransaction(debit, oops)
+        assertApiException("Transaction debits balance must equal credit balance") { client.createLedgerTransaction(oops, credit) }
         }
     }
 
@@ -86,6 +87,25 @@ class FakeModernTreasuryClientTest {
 }
 
 var nextId = 1L
+
+/**
+ * Assert a specific API exception result.
+ *
+ * Does not eat other errors.
+ */
+fun assertApiException(errorMessage: String, it: () -> Unit) {
+    val exception = try {
+        it()
+    } catch (x: ExecutionException) {
+        val cause = x.cause // "Smart cast to 'Throwable' is impossible, because 'x.cause' is a property that has open or custom getter"
+        if (cause is ModernTreasuryApiException) cause
+        else throw x
+    } catch (x: ModernTreasuryApiException) { x }
+        as? ModernTreasuryApiException
+
+    assertTrue(exception != null, "Expected ModernTreasuryAPIException")
+    assertEquals(exception?.errorMessage, errorMessage)
+}
 
 fun ModernTreasuryClient.createLedgerTransaction(vararg entries: RequestLedgerEntry) =
     this.createLedgerTransaction(
