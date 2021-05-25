@@ -9,7 +9,6 @@ import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.Clock
@@ -70,19 +69,19 @@ class FakeModernTreasuryClientTest {
         assertApiException("Non-Negative Amounts") { client.createLedgerTransaction(debit, credit) }
     }
 
-    @Disabled("Idempotent support not yet merger")
     @Test
     fun `Supports idempotent transaction creation`() {
+        val KEY = "Supports idempotent transaction creation"
         val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
         val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
 
         val tx1 = client.createLedgerTransaction(
             TODAY,
             listOf(debit, credit),
-            "Supports idempotent transaction creation",
+            KEY,
             "",
             LedgerTransactionStatus.PENDING,
-            "Supports idempotent transaction creation"
+            KEY
         ).get()
 
         // Pretend we've lost the transaction and do it again.
@@ -90,10 +89,10 @@ class FakeModernTreasuryClientTest {
         val tx2 = client.createLedgerTransaction(
             TODAY,
             listOf(debit, credit),
-            "Supports idempotent transaction creation",
+            KEY,
             "",
             LedgerTransactionStatus.PENDING,
-            "Supports idempotent transaction creation"
+            KEY
         ).get()
 
         assertEquals(tx1.id, tx2.id)
