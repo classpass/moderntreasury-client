@@ -15,6 +15,7 @@ import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import java.io.Closeable
 import java.time.LocalDate
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 interface ModernTreasuryClient : Closeable {
@@ -25,7 +26,7 @@ interface ModernTreasuryClient : Closeable {
         name: String,
         description: String?,
         normalBalanceType: NormalBalanceType,
-        ledgerId: String,
+        ledgerId: UUID,
         idempotencyKey: String,
         metadata: RequestMetadata = emptyMap()
     ) = createLedgerAccount(
@@ -39,10 +40,10 @@ interface ModernTreasuryClient : Closeable {
         )
     )
 
-    fun getLedgerAccount(ledgerAccountId: String): CompletableFuture<LedgerAccount>
+    fun getLedgerAccount(ledgerAccountId: UUID): CompletableFuture<LedgerAccount>
 
     fun getLedgerAccountBalance(
-        ledgerAccountId: String,
+        ledgerAccountId: UUID,
         /**
          * The date of the balance in local time. Defaults to today's date.
          */
@@ -53,11 +54,11 @@ interface ModernTreasuryClient : Closeable {
         /**
          * The ID of the ledger transaction
          */
-        id: String
+        id: UUID
     ): CompletableFuture<LedgerTransaction>
 
     fun getLedgerTransactions(
-        ledgerId: String? = null,
+        ledgerId: UUID? = null,
         /**
          * Key/Value metadata pairs to search transactions for.
          */
@@ -96,7 +97,7 @@ interface ModernTreasuryClient : Closeable {
         /**
          * The ID of the ledger transaction to update
          */
-        id: String,
+        id: UUID,
         description: String? = null,
         /**
          * To post the ledger transaction, use POSTED. To archive a pending ledger transaction, use ARCHIVED.
@@ -123,7 +124,7 @@ interface ModernTreasuryClient : Closeable {
         /**
          * The ID of the ledger transaction to archive
          */
-        id: String,
+        id: UUID,
     ): CompletableFuture<LedgerTransaction> = updateLedgerTransaction(
         id,
         null,

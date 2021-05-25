@@ -13,6 +13,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import org.junit.jupiter.api.Test
+import java.util.UUID
 
 class LedgerAccountTests : WireMockClientTest() {
 
@@ -23,17 +24,18 @@ class LedgerAccountTests : WireMockClientTest() {
             pending = listOf(LedgerAccountBalanceItem(6, 23, -17, "USD")),
             posted = listOf(LedgerAccountBalanceItem(0, 11, -11, "USD"))
         )
-        val actual = client.getLedgerAccountBalance("12345").get()
+        val actual = client.getLedgerAccountBalance(UUID.randomUUID()).get()
         assertThat(actual).isEqualTo(expectedDeserialized)
     }
 
     @Test
     fun `createLedgerAccount makes a well-formatted request body and deserializes responses properly`() {
+        val uuid = UUID.randomUUID()
         val request = CreateLedgerAccountRequest(
             "the_name",
             "the_description",
             NormalBalanceType.CREDIT,
-            "1234",
+            uuid,
             "idempotencykey"
         )
         val expectedRequestJson = """
@@ -41,21 +43,21 @@ class LedgerAccountTests : WireMockClientTest() {
                 "name": "the_name",
                 "description": "the_description",
                 "normal_balance": "credit",
-                "ledger_id": "1234",
+                "ledger_id": "$uuid",
                 "metadata": {}
             }
         """
         stubFor(
             post(urlMatching("/ledger_accounts"))
                 .withRequestBody(equalToJson(expectedRequestJson))
-                .willReturn(ledgerAccountResponse)
+                .willReturn(ledgerAccountResponse(uuid))
         )
 
         val actualResponse = client.createLedgerAccount(request).get()
         val expectedDeserialized = LedgerAccount(
-            id = "f1c7-xxxxx",
+            id = actualResponse.id,
             name = "Operating Bank Account",
-            ledgerId = "89c8-xxxxx",
+            ledgerId = uuid,
             description = null,
             normalBalance = NormalBalanceType.DEBIT,
             lockVersion = 23,

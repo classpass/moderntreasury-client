@@ -1,6 +1,7 @@
 package com.classpass.moderntreasury.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.util.UUID
 
 /**
  * A LedgerEntry represents an accounting entry within a parent LedgerTransaction. Its amount is denominated in the
@@ -10,11 +11,11 @@ data class LedgerEntry(
     /**
      * Unique identifier for the ledger entry.
      */
-    val id: String,
+    val id: UUID,
     /**
      * ID of the ledger account.
      */
-    val ledgerAccountId: String,
+    val ledgerAccountId: UUID,
     /**
      * Either CREDIT or DEBIT
      */

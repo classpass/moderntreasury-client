@@ -32,6 +32,7 @@ import org.asynchttpclient.Dsl
 import org.asynchttpclient.Response
 import java.time.Duration
 import java.time.LocalDate
+import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -75,11 +76,11 @@ internal class AsyncModernTreasuryClient(
         request: CreateLedgerAccountRequest
     ): CompletableFuture<LedgerAccount> = post("/ledger_accounts", request)
 
-    override fun getLedgerAccount(ledgerAccountId: String): CompletableFuture<LedgerAccount> =
+    override fun getLedgerAccount(ledgerAccountId: UUID): CompletableFuture<LedgerAccount> =
         get("/ledger_accounts/$ledgerAccountId")
 
     override fun getLedgerAccountBalance(
-        ledgerAccountId: String,
+        ledgerAccountId: UUID,
         asOfDate: LocalDate?
     ): CompletableFuture<LedgerAccountBalance> {
         val queryParams = asOfDate?.let {
@@ -89,15 +90,15 @@ internal class AsyncModernTreasuryClient(
         return get("/ledger_accounts/$ledgerAccountId/balance", queryParams)
     }
 
-    override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> =
+    override fun getLedgerTransaction(id: UUID): CompletableFuture<LedgerTransaction> =
         get("/ledger_transactions/$id")
 
     override fun getLedgerTransactions(
-        ledgerId: String?,
+        ledgerId: UUID?,
         metadata: Map<String, String>
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val queryParams = mapOf(
-            "ledger_id" to listOfNotNull(ledgerId),
+            "ledger_id" to listOfNotNull(ledgerId.toString()),
         ).plus(metadata.toQueryParams())
 
         return getPaginated("/ledger_transactions", queryParams)

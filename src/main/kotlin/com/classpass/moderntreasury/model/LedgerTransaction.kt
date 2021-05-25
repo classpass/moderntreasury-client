@@ -3,6 +3,7 @@ package com.classpass.moderntreasury.model
 import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.LocalDate
 import java.time.ZonedDateTime
+import java.util.UUID
 
 /**
  * A LedgerTransaction is a transaction between two LedgerAccounts. To create a LedgerTransaction, there must be at
@@ -13,7 +14,7 @@ data class LedgerTransaction(
     /**
      * Unique identifier for the ledger transaction.
      */
-    val id: String,
+    val id: UUID,
     /**
      * An optional free-form description for internal use.
      */
@@ -39,7 +40,7 @@ data class LedgerTransaction(
     /**
      * The ID of the ledger this account belongs to.
      */
-    val ledgerId: String,
+    val ledgerId: UUID,
     /**
      * If the ledger transaction can be reconciled to another object in Modern Treasury, the type will be populated here,
      * otherwise null.

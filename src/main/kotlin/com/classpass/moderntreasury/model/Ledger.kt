@@ -1,5 +1,7 @@
 package com.classpass.moderntreasury.model
 
+import java.util.UUID
+
 /**
  * A Ledger reqpresents a standard chart of ledger accounts.
  * API Doc reference: https://docs.moderntreasury.com/reference#ledger-object
@@ -8,7 +10,7 @@ data class Ledger(
     /**
      * Unique identifier for the ledger.
      */
-    val id: String,
+    val id: UUID,
     /**
      * The name of the ledger.
      */
