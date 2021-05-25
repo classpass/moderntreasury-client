@@ -28,6 +28,7 @@ class FakeModernTreasuryClientTest {
     val usd = client.createLedger("USD", "", "USD", NIK).get()
     val can = client.createLedger("CAN", "", "CAN", NIK).get()
 
+    val can_cash = client.createLedgerAccount("Cash", "", NormalBalanceType.CREDIT, can.id, NIK).get()
     val usd_cash = client.createLedgerAccount("Cash", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
     val usd_cogs = client.createLedgerAccount("COGS", "", NormalBalanceType.DEBIT, usd.id, NIK).get()
     val us_venue = client.createLedgerAccount("US Venue", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
@@ -52,6 +53,14 @@ class FakeModernTreasuryClientTest {
 
         assertApiException("Transaction debits balance must equal credit balance") { client.createLedgerTransaction(oops, credit) }
         }
+
+    @Test
+    fun `Can not make a transaction across ledgers`() {
+        val debit = RequestLedgerEntry(-100, LedgerEntryDirection.DEBIT, can_cash.id)
+        val credit = RequestLedgerEntry(-100, LedgerEntryDirection.CREDIT, us_venue.id)
+
+        assertApiException("Inconsistent Ledger Usage") { client.createLedgerTransaction(debit, credit) }
+    }
     }
 
     @Disabled("Idempotent support not yet merger")
