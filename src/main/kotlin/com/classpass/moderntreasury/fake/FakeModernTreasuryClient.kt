@@ -6,9 +6,13 @@ import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountBalanceItem
+import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerEntry
 import com.classpass.moderntreasury.model.LedgerEntryDirection
+import com.classpass.moderntreasury.model.LedgerEntryId
+import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.LedgerTransaction
+import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.ModernTreasuryPageInfo
@@ -30,12 +34,12 @@ import java.util.concurrent.CompletableFuture.supplyAsync
 class FakeModernTreasuryClient
 constructor(val clock: Clock) :
     ModernTreasuryClient {
-    private val accounts: MutableMap<String, LedgerAccount> = mutableMapOf()
-    private val ledgers: MutableMap<String, Ledger> = mutableMapOf()
+    private val accounts: MutableMap<LedgerAccountId, LedgerAccount> = mutableMapOf()
+    private val ledgers: MutableMap<LedgerId, Ledger> = mutableMapOf()
     private val transactions: MutableList<LedgerTransaction> = mutableListOf()
 
     // Map idempotency key to actual id.
-    private val transactionIdByIk = mutableMapOf<String, String>()
+    private val transactionIdByIk = mutableMapOf<String, LedgerTransactionId>()
 
     /**
      * For test purposes, permit to clear all transactions.
@@ -46,25 +50,25 @@ constructor(val clock: Clock) :
     }
 
     override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> = supplyAsync {
-        val ledger = request.reify(makeId())
+        val ledger = request.reify(LedgerId(makeId()))
         ledgers[ledger.id] = ledger
         ledger
     }
 
-    override fun getLedgerAccount(ledgerAccountId: String): CompletableFuture<LedgerAccount> = supplyAsync {
-        accounts[ledgerAccountId]?.let { it } ?: fail("Ledger Account Not Found")
+    override fun getLedgerAccount(ledgerAccountId: LedgerAccountId): CompletableFuture<LedgerAccount> = supplyAsync {
+        accounts[ledgerAccountId] ?: fail("Ledger Account Not Found")
     }
 
     override fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount> = supplyAsync {
         val ledger = ledgers[request.ledgerId]
             ?: fail("Ledger Not Found")
 
-        val account = request.reify(makeId(), ledger.id, LOCKVERSION)
+        val account = request.reify(LedgerAccountId(makeId()), ledger.id, LOCKVERSION)
         accounts[account.id] = account
         account
     }
 
-    override fun getLedgerAccountBalance(ledgerAccountId: String, asOfDate: LocalDate?): CompletableFuture<LedgerAccountBalance> = supplyAsync {
+    override fun getLedgerAccountBalance(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate?): CompletableFuture<LedgerAccountBalance> = supplyAsync {
         val account = accounts[ledgerAccountId]
             ?: fail("Ledger Account Not Found")
 
@@ -81,13 +85,13 @@ constructor(val clock: Clock) :
         tally.balance(ledger.currency)
     }
 
-    override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> {
+    override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> {
         val transaction = transactions.find { it.id == id }
             ?: fail("Transaction Not Found")
         return completedFuture(transaction)
     }
 
-    override fun getLedgerTransactions(ledgerId: String?, metadata: Map<String, String>): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
+    override fun getLedgerTransactions(ledgerId: LedgerId?, metadata: Map<String, String>): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val content = transactions.filter {
             (ledgerId != null && it.ledgerId == ledgerId) || metadata matches it.metadata
         }
@@ -114,14 +118,14 @@ constructor(val clock: Clock) :
         val ledgerAccount1 = accounts[ledgerAccountId1]
             ?: fail("Ledger Account Not Found")
 
-        val ledgerEntries = request.ledgerEntries.map { it.reify(makeId(), LOCKVERSION) }.also { it.validate() }
+        val ledgerEntries = request.ledgerEntries.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }.also { it.validate() }
 
         val ledgerId1 = ledgerAccount1.ledgerId
         ledgerEntries.all { ledgerId1 == accounts[it.ledgerAccountId]?.ledgerId } || fail("Inconsistent Ledger Usage")
         ledgerEntries.all { it.amount >= 0 } || fail("Non-Negative Amounts") // MIGHT not be correct.
 
         val transaction = LedgerTransaction(
-            id = makeId(),
+            id = LedgerTransactionId(makeId()),
             description = request.description,
             status = status,
             metadata = metadata,
@@ -148,7 +152,7 @@ constructor(val clock: Clock) :
         if (transaction.status != LedgerTransactionStatus.PENDING)
             fail("Invalid State")
 
-        val ledgerEntries = request.ledgerEntries?.map { it.reify(makeId(), LOCKVERSION) }?.also { it.validate() }
+        val ledgerEntries = request.ledgerEntries?.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }?.also { it.validate() }
 
         val metadata = transaction.metadata
             // Remove entries which are specifically set to null in the request.
@@ -179,7 +183,7 @@ constructor(val clock: Clock) :
  * Calculate a running tally of transactions across one ledger account.
  */
 class Accumulator
-constructor(val accountId: String, val balanceType: NormalBalanceType) {
+constructor(private val accountId: LedgerAccountId, private val balanceType: NormalBalanceType) {
     var pendingDebits = 0L
     var postedDebits = 0L
     var pendingCredits = 0L
@@ -218,7 +222,7 @@ constructor(val accountId: String, val balanceType: NormalBalanceType) {
 private const val LIVEMODE = false
 private const val LOCKVERSION = 0L
 
-private fun makeId() = UUID.randomUUID().toString()
+private fun makeId() = UUID.randomUUID()
 
 @Suppress("UNCHECKED_CAST")
 private fun RequestMetadata.filterNonNullValues() =
@@ -240,13 +244,13 @@ private data class PageInfo(
     override val totalCount: Int
 ) : ModernTreasuryPageInfo
 
-private fun CreateLedgerAccountRequest.reify(ledgerAccountId: String, ledgerId: String, lockVersion: Long) =
+private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId, lockVersion: Long) =
     LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, lockVersion, this.metadata.filterNonNullValues(), LIVEMODE)
 
-private fun CreateLedgerRequest.reify(id: String) =
+private fun CreateLedgerRequest.reify(id: LedgerId) =
     Ledger(id, this.name, this.description, this.currency, this.metadata.filterNonNullValues(), LIVEMODE)
 
-private fun RequestLedgerEntry.reify(id: String, lockVersion: Long) =
+private fun RequestLedgerEntry.reify(id: LedgerEntryId, lockVersion: Long) =
     LedgerEntry(id, this.ledgerAccountId, this.direction, this.amount, lockVersion, LIVEMODE)
 
 /**

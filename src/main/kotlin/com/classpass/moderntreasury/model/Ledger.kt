@@ -1,5 +1,8 @@
 package com.classpass.moderntreasury.model
 
+import com.fasterxml.jackson.annotation.JsonProperty
+import java.util.UUID
+
 /**
  * A Ledger reqpresents a standard chart of ledger accounts.
  * API Doc reference: https://docs.moderntreasury.com/reference#ledger-object
@@ -8,7 +11,7 @@ data class Ledger(
     /**
      * Unique identifier for the ledger.
      */
-    val id: String,
+    val id: LedgerId,
     /**
      * The name of the ledger.
      */
@@ -32,3 +35,10 @@ data class Ledger(
      */
     val liveMode: Boolean
 )
+
+data class LedgerId(
+    @JsonProperty("ledger_uuid")
+    val uuid: UUID
+) {
+    override fun toString() = uuid.toString()
+}

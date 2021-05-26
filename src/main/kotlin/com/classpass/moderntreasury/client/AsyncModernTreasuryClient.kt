@@ -7,7 +7,10 @@ import com.classpass.moderntreasury.exception.toModernTreasuryException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerAccountId
+import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.LedgerTransaction
+import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.extractPageInfo
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
@@ -75,11 +78,11 @@ internal class AsyncModernTreasuryClient(
         request: CreateLedgerAccountRequest
     ): CompletableFuture<LedgerAccount> = post("/ledger_accounts", request)
 
-    override fun getLedgerAccount(ledgerAccountId: String): CompletableFuture<LedgerAccount> =
+    override fun getLedgerAccount(ledgerAccountId: LedgerAccountId): CompletableFuture<LedgerAccount> =
         get("/ledger_accounts/$ledgerAccountId")
 
     override fun getLedgerAccountBalance(
-        ledgerAccountId: String,
+        ledgerAccountId: LedgerAccountId,
         asOfDate: LocalDate?
     ): CompletableFuture<LedgerAccountBalance> {
         val queryParams = asOfDate?.let {
@@ -89,15 +92,15 @@ internal class AsyncModernTreasuryClient(
         return get("/ledger_accounts/$ledgerAccountId/balance", queryParams)
     }
 
-    override fun getLedgerTransaction(id: String): CompletableFuture<LedgerTransaction> =
+    override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> =
         get("/ledger_transactions/$id")
 
     override fun getLedgerTransactions(
-        ledgerId: String?,
+        ledgerId: LedgerId?,
         metadata: Map<String, String>
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val queryParams = mapOf(
-            "ledger_id" to listOfNotNull(ledgerId),
+            "ledger_id" to listOfNotNull(ledgerId?.toString()),
         ).plus(metadata.toQueryParams())
 
         return getPaginated("/ledger_transactions", queryParams)

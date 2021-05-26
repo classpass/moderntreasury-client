@@ -1,6 +1,7 @@
 package com.classpass.moderntreasury.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.util.UUID
 
 /**
  * A LedgerAccount is an account in a double-entry accounting system. Common examples include asset, liability, expense,
@@ -11,7 +12,7 @@ data class LedgerAccount(
     /**
      * Unique identifier for the ledger account.
      */
-    val id: String,
+    val id: LedgerAccountId,
     /**
      * The name of the ledger account. e.g. Assets
      */
@@ -27,7 +28,7 @@ data class LedgerAccount(
     /**
      * The ID of the ledger this account belongs to.
      */
-    val ledgerId: String,
+    val ledgerId: LedgerId,
     /**
      * an integer that is incremented every time a transaction is posted to the account.
      */
@@ -51,4 +52,11 @@ data class LedgerAccount(
 enum class NormalBalanceType {
     @JsonProperty("credit") CREDIT,
     @JsonProperty("debit") DEBIT
+}
+
+data class LedgerAccountId(
+    @JsonProperty("ledger_account_uuid")
+    val uuid: UUID
+) {
+    override fun toString() = uuid.toString()
 }

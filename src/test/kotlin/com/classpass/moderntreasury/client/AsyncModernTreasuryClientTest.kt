@@ -10,6 +10,8 @@ import assertk.assertions.isNotNull
 import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerAccountId
+import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.github.tomakehurst.wiremock.client.BasicCredentials
@@ -27,6 +29,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.verify
 import com.github.tomakehurst.wiremock.http.HttpHeaders
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import java.util.UUID
 import kotlin.test.assertFails
 
 class AsyncModernTreasuryClientTest : WireMockClientTest() {
@@ -102,14 +105,19 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
     fun `test paginated response deserialization`() {
         stubFor(
             get(anyUrl()).willReturn(
-                ledgerTransactionsListResponse
+                ledgerTransactionsListResponse(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    UUID.randomUUID()
+                )
                     .withHeader("x-page", "1")
                     .withHeader("x-per-page", "3")
                     .withHeader("x-total-count", "40")
             )
         )
 
-        val result = client.getLedgerTransactions("foo").get()
+        val result = client.getLedgerTransactions(LedgerId(UUID.randomUUID())).get()
         assertThat(result.page).isEqualTo(1)
         assertThat(result.perPage).isEqualTo(3)
         assertThat(result.totalCount).isEqualTo(40)
@@ -120,12 +128,17 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
     fun `test missing pagination headers`() {
         stubFor(
             get(anyUrl()).willReturn(
-                ledgerTransactionsListResponse
+                ledgerTransactionsListResponse(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    UUID.randomUUID()
+                )
                     .withHeaders(HttpHeaders.noHeaders())
             )
         )
 
-        assertThat { client.getLedgerTransactions("foo").get() }.isFailure()
+        assertThat { client.getLedgerTransactions(LedgerId(UUID.randomUUID())).get() }.isFailure()
             .transform { it.cause!! }
             .isInstanceOf(MissingPaginationHeadersException::class.java)
     }
@@ -136,7 +149,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
         val badResponse: ResponseDefinitionBuilder = ok(
             """
             {
-                "id": "f1c7-xxxxx",
+                "id": "${UUID.randomUUID()}",
                 "object": "ledger_account",
                 "name": "Operating Bank Account",
                 "ledger_id": "89c8-xxxxx",
@@ -152,7 +165,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
 
         stubFor(get(anyUrl()).willReturn(badResponse))
 
-        val thrown = assertFails { client.getLedgerAccount("123").get() }
+        val thrown = assertFails { client.getLedgerAccount(LedgerAccountId(UUID.randomUUID())).get() }
         assertThat(thrown.cause).isNotNull().isInstanceOf(MismatchedInputException::class)
     }
 }

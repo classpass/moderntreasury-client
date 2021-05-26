@@ -2,7 +2,6 @@ package com.classpass.moderntreasury.client
 
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.configureFor
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.TestInstance
+import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 open class WireMockClientTest {
@@ -43,13 +43,13 @@ open class WireMockClientTest {
         wireMockServer.stop()
     }
 
-    protected val ledgerAccountResponse: ResponseDefinitionBuilder = ok(
+    protected fun ledgerAccountResponse(ledgerId: UUID) = ok(
         """
             {
-                "id": "f1c7-xxxxx",
+                "id": {"ledger_account_uuid": "${UUID.randomUUID()}"},
                 "object": "ledger_account",
                 "name": "Operating Bank Account",
-                "ledger_id": "89c8-xxxxx",
+                "ledger_id": {"ledger_uuid": "$ledgerId"},
                 "description": null,
                 "normal_balance": "debit",
                 "lock_version": "23",
@@ -84,27 +84,32 @@ open class WireMockClientTest {
         """
     )
 
-    protected val ledgerTransactionResponse = ok(
+    protected fun ledgerTransactionResponse(
+        id: UUID,
+        ledgerId: UUID,
+        ledgerEntryId: UUID,
+        ledgerAccountId: UUID,
+    ) = ok(
         """
         {
-          "id": "4f5b1dd9-xxx123",
+          "id": {"ledger_transaction_uuid": "$id"},
           "object": "ledger_transaction",
           "live_mode": false,
           "external_id": "zwt3-xxx123",
           "ledgerable_type": null,
           "ledgerable_id": null,
-          "ledger_id": "0aa9c435-xxx123",
+          "ledger_id": {"ledger_uuid": "$ledgerId"},
           "description": "test 3 pending",
           "status": "pending",
           "ledger_entries": [
             {
-              "id": "4492f794-xxx123",
+              "id": {"ledger_entry_uuid": "$ledgerEntryId"},
               "object": "ledger_entry",
               "live_mode": false,
               "amount": 6,
               "direction": "credit",
-              "ledger_account_id": "f3e54ff6-xxx123",
-              "ledger_transaction_id": "4f5b1dd9-xxx123",
+              "ledger_account_id": {"ledger_account_uuid": "$ledgerAccountId"},
+              "ledger_transaction_id": {"ledger_transaction_uuid": "$id"},
               "discarded_at": null,
               "created_at": "2021-05-04T21:44:08Z",
               "updated_at": "2021-05-04T21:44:08Z"
@@ -119,16 +124,21 @@ open class WireMockClientTest {
         """
     )
 
-    protected val ledgerTransactionsListResponse = ok(
-        ledgerTransactionResponse.build().body.let { responseElement ->
+    protected fun ledgerTransactionsListResponse(
+        id: UUID,
+        ledgerId: UUID,
+        ledgerEntryId: UUID,
+        ledgerAccountId: UUID,
+    ) = ok(
+        ledgerTransactionResponse(id, ledgerId, ledgerEntryId, ledgerAccountId).build().body.let { responseElement ->
             "[$responseElement, $responseElement, $responseElement]"
         }
     )
 
-    protected val ledgerResponse = ok(
+    protected fun ledgerResponse(id: UUID) = ok(
         """
        {
-            "id": "89c8bd30-e06a-4a79-b396-e6c7e13e7a12",
+            "id": {"ledger_uuid": "$id"},
             "object": "ledger",
             "name": "Business Ledger",
             "description": null,

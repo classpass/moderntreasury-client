@@ -1,5 +1,6 @@
 package com.classpass.moderntreasury.model.request
 
+import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -9,7 +10,7 @@ data class UpdateLedgerTransactionRequest(
      * The ID of the ledger transaction to update
      */
     @JsonIgnore
-    val id: String,
+    val id: LedgerTransactionId,
     val description: String? = null,
     /**
      * To post the ledger transaction, use POSTED. To archive a pending ledger transaction, use ARCHIVED.
