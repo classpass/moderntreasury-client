@@ -47,4 +47,6 @@ enum class LedgerEntryDirection {
 data class LedgerEntryId(
     @JsonProperty("ledger_entry_uuid")
     val uuid: UUID
-)
+) {
+    override fun toString() = uuid.toString()
+}

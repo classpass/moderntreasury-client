@@ -79,7 +79,7 @@ internal class AsyncModernTreasuryClient(
     ): CompletableFuture<LedgerAccount> = post("/ledger_accounts", request)
 
     override fun getLedgerAccount(ledgerAccountId: LedgerAccountId): CompletableFuture<LedgerAccount> =
-        get("/ledger_accounts/${ledgerAccountId.uuid}")
+        get("/ledger_accounts/$ledgerAccountId")
 
     override fun getLedgerAccountBalance(
         ledgerAccountId: LedgerAccountId,
@@ -89,18 +89,18 @@ internal class AsyncModernTreasuryClient(
             mapOf("as_of_date" to listOf(it.toString()))
         } ?: emptyMap()
 
-        return get("/ledger_accounts/${ledgerAccountId.uuid}/balance", queryParams)
+        return get("/ledger_accounts/$ledgerAccountId/balance", queryParams)
     }
 
     override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> =
-        get("/ledger_transactions/${id.uuid}")
+        get("/ledger_transactions/$id")
 
     override fun getLedgerTransactions(
         ledgerId: LedgerId?,
         metadata: Map<String, String>
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val queryParams = mapOf(
-            "ledger_id" to listOfNotNull(ledgerId?.uuid.toString()),
+            "ledger_id" to listOfNotNull(ledgerId?.toString()),
         ).plus(metadata.toQueryParams())
 
         return getPaginated("/ledger_transactions", queryParams)
@@ -110,7 +110,7 @@ internal class AsyncModernTreasuryClient(
         post("/ledger_transactions", request)
 
     override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
-        patch("/ledger_transactions/${request.id.uuid}", request)
+        patch("/ledger_transactions/${request.id}", request)
 
     override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> =
         post("/ledgers", request)

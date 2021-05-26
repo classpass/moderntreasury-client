@@ -85,4 +85,6 @@ enum class LedgerableType {
 data class LedgerTransactionId(
     @JsonProperty("ledger_transaction_uuid")
     val uuid: UUID
-)
+) {
+    override fun toString() = uuid.toString()
+}

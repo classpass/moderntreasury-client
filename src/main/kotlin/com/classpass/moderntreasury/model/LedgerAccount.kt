@@ -57,4 +57,6 @@ enum class NormalBalanceType {
 data class LedgerAccountId(
     @JsonProperty("ledger_account_uuid")
     val uuid: UUID
-)
+) {
+    override fun toString() = uuid.toString()
+}

@@ -39,4 +39,6 @@ data class Ledger(
 data class LedgerId(
     @JsonProperty("ledger_uuid")
     val uuid: UUID
-)
+) {
+    override fun toString() = uuid.toString()
+}
