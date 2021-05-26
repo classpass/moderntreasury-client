@@ -12,7 +12,7 @@ data class LedgerAccount(
     /**
      * Unique identifier for the ledger account.
      */
-    val id: UUID,
+    val id: LedgerAccountId,
     /**
      * The name of the ledger account. e.g. Assets
      */
@@ -28,7 +28,7 @@ data class LedgerAccount(
     /**
      * The ID of the ledger this account belongs to.
      */
-    val ledgerId: UUID,
+    val ledgerId: LedgerId,
     /**
      * an integer that is incremented every time a transaction is posted to the account.
      */
@@ -53,3 +53,8 @@ enum class NormalBalanceType {
     @JsonProperty("credit") CREDIT,
     @JsonProperty("debit") DEBIT
 }
+
+data class LedgerAccountId(
+    @JsonProperty("ledger_account_uuid")
+    val uuid: UUID
+)

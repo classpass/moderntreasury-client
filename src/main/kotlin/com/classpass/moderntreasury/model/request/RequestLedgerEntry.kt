@@ -1,12 +1,12 @@
 package com.classpass.moderntreasury.model.request
 
+import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerEntryDirection
-import java.util.UUID
 
 data class RequestLedgerEntry(
     val amount: Long,
     val direction: LedgerEntryDirection,
-    val ledgerAccountId: UUID,
+    val ledgerAccountId: LedgerAccountId,
     /**
      * an integer that is incremented every time a transaction is posted to the account. When the client is creating a
      * account. When the client is creating a ledger transaction and wants to assert that the ledger account's state

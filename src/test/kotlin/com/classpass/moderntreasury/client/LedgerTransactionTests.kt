@@ -2,9 +2,13 @@ package com.classpass.moderntreasury.client
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerEntry
 import com.classpass.moderntreasury.model.LedgerEntryDirection
+import com.classpass.moderntreasury.model.LedgerEntryId
+import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.LedgerTransaction
+import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
@@ -28,10 +32,10 @@ class LedgerTransactionTests : WireMockClientTest() {
 
     @Test
     fun `LedgerTransaction response deserialization`() {
-        val id = UUID.randomUUID()
-        val ledgerId = UUID.randomUUID()
-        val ledgerEntryId = UUID.randomUUID()
-        val ledgerAccountId = UUID.randomUUID()
+        val id = LedgerTransactionId(UUID.randomUUID())
+        val ledgerId = LedgerId(UUID.randomUUID())
+        val ledgerEntryId = LedgerEntryId(UUID.randomUUID())
+        val ledgerAccountId = LedgerAccountId(UUID.randomUUID())
         val expectedLedgerTransaction = LedgerTransaction(
             id = id,
             description = "test 3 pending",
@@ -59,20 +63,20 @@ class LedgerTransactionTests : WireMockClientTest() {
         stubFor(
             get(urlMatching("/ledger_transactions/.+")).willReturn(
                 ledgerTransactionResponse(
-                    id,
-                    ledgerId,
-                    ledgerEntryId,
-                    ledgerAccountId
+                    id.uuid,
+                    ledgerId.uuid,
+                    ledgerEntryId.uuid,
+                    ledgerAccountId.uuid
                 )
             )
         )
-        val actualLedgerTransaction = client.getLedgerTransaction(UUID.randomUUID()).get()
+        val actualLedgerTransaction = client.getLedgerTransaction(LedgerTransactionId(UUID.randomUUID())).get()
         assertThat(actualLedgerTransaction).isEqualTo(expectedLedgerTransaction)
     }
 
     @Test
     fun `createLedgerTransaction request serialization`() {
-        val ledgerAccountId = UUID.randomUUID()
+        val ledgerAccountId = LedgerAccountId(UUID.randomUUID())
         val request = CreateLedgerTransactionRequest(
             LocalDate.of(2021, 5, 13),
             listOf(
@@ -96,7 +100,7 @@ class LedgerTransactionTests : WireMockClientTest() {
                 {
                   "amount": 6,
                   "direction": "debit",
-                  "ledger_account_id": "$ledgerAccountId",
+                  "ledger_account_id": {"ledger_account_uuid": "${ledgerAccountId.uuid}"},
                   "lock_version": 4
                 }
               ],
@@ -113,7 +117,14 @@ class LedgerTransactionTests : WireMockClientTest() {
         """
         stubFor(
             post(urlMatching("/ledger_transactions$")).withRequestBody(equalToJson(expectedRequestJson))
-                .willReturn(ledgerTransactionResponse(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), ledgerAccountId))
+                .willReturn(
+                    ledgerTransactionResponse(
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        ledgerAccountId.uuid
+                    )
+                )
         )
 
         assertDoesNotThrow { client.createLedgerTransaction(request).get() }
@@ -123,7 +134,7 @@ class LedgerTransactionTests : WireMockClientTest() {
     fun `updateLedgerTransaction makes a well-formed request`() {
         val uuid = UUID.randomUUID()
         val request = UpdateLedgerTransactionRequest(
-            uuid,
+            LedgerTransactionId(uuid),
             "the-description",
             LedgerTransactionStatus.POSTED,
         )
@@ -135,7 +146,14 @@ class LedgerTransactionTests : WireMockClientTest() {
         """
         stubFor(
             patch(urlMatching("/ledger_transactions/$uuid$")).withRequestBody(equalToJson(expectedRequestJson))
-                .willReturn(ledgerTransactionResponse(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()))
+                .willReturn(
+                    ledgerTransactionResponse(
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        UUID.randomUUID()
+                    )
+                )
         )
         assertDoesNotThrow { client.updateLedgerTransaction(request).get() }
     }
@@ -153,7 +171,7 @@ class LedgerTransactionTests : WireMockClientTest() {
                 )
             )
         )
-        assertDoesNotThrow { client.getLedgerTransaction(id).get() }
+        assertDoesNotThrow { client.getLedgerTransaction(LedgerTransactionId(id)).get() }
     }
 
     @Test

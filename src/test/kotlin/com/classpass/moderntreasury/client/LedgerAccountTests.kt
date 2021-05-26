@@ -5,6 +5,8 @@ import assertk.assertions.isEqualTo
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountBalanceItem
+import com.classpass.moderntreasury.model.LedgerAccountId
+import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
@@ -24,7 +26,7 @@ class LedgerAccountTests : WireMockClientTest() {
             pending = listOf(LedgerAccountBalanceItem(6, 23, -17, "USD")),
             posted = listOf(LedgerAccountBalanceItem(0, 11, -11, "USD"))
         )
-        val actual = client.getLedgerAccountBalance(UUID.randomUUID()).get()
+        val actual = client.getLedgerAccountBalance(LedgerAccountId(UUID.randomUUID())).get()
         assertThat(actual).isEqualTo(expectedDeserialized)
     }
 
@@ -35,7 +37,7 @@ class LedgerAccountTests : WireMockClientTest() {
             "the_name",
             "the_description",
             NormalBalanceType.CREDIT,
-            uuid,
+            LedgerId(uuid),
             "idempotencykey"
         )
         val expectedRequestJson = """
@@ -43,7 +45,7 @@ class LedgerAccountTests : WireMockClientTest() {
                 "name": "the_name",
                 "description": "the_description",
                 "normal_balance": "credit",
-                "ledger_id": "$uuid",
+                "ledger_id": {"ledger_uuid": "$uuid"},
                 "metadata": {}
             }
         """
@@ -57,7 +59,7 @@ class LedgerAccountTests : WireMockClientTest() {
         val expectedDeserialized = LedgerAccount(
             id = actualResponse.id,
             name = "Operating Bank Account",
-            ledgerId = uuid,
+            ledgerId = LedgerId(uuid),
             description = null,
             normalBalance = NormalBalanceType.DEBIT,
             lockVersion = 23,

@@ -10,6 +10,8 @@ import assertk.assertions.isNotNull
 import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerAccountId
+import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.github.tomakehurst.wiremock.client.BasicCredentials
@@ -115,7 +117,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
             )
         )
 
-        val result = client.getLedgerTransactions(UUID.randomUUID()).get()
+        val result = client.getLedgerTransactions(LedgerId(UUID.randomUUID())).get()
         assertThat(result.page).isEqualTo(1)
         assertThat(result.perPage).isEqualTo(3)
         assertThat(result.totalCount).isEqualTo(40)
@@ -136,7 +138,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
             )
         )
 
-        assertThat { client.getLedgerTransactions(UUID.randomUUID()).get() }.isFailure()
+        assertThat { client.getLedgerTransactions(LedgerId(UUID.randomUUID())).get() }.isFailure()
             .transform { it.cause!! }
             .isInstanceOf(MissingPaginationHeadersException::class.java)
     }
@@ -163,7 +165,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
 
         stubFor(get(anyUrl()).willReturn(badResponse))
 
-        val thrown = assertFails { client.getLedgerAccount(UUID.randomUUID()).get() }
+        val thrown = assertFails { client.getLedgerAccount(LedgerAccountId(UUID.randomUUID())).get() }
         assertThat(thrown.cause).isNotNull().isInstanceOf(MismatchedInputException::class)
     }
 }

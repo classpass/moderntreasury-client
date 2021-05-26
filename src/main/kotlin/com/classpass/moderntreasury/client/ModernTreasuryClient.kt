@@ -3,7 +3,10 @@ package com.classpass.moderntreasury.client
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerAccountId
+import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.LedgerTransaction
+import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.NormalBalanceType
@@ -15,7 +18,6 @@ import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import java.io.Closeable
 import java.time.LocalDate
-import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
 interface ModernTreasuryClient : Closeable {
@@ -26,7 +28,7 @@ interface ModernTreasuryClient : Closeable {
         name: String,
         description: String?,
         normalBalanceType: NormalBalanceType,
-        ledgerId: UUID,
+        ledgerId: LedgerId,
         idempotencyKey: String,
         metadata: RequestMetadata = emptyMap()
     ) = createLedgerAccount(
@@ -40,10 +42,10 @@ interface ModernTreasuryClient : Closeable {
         )
     )
 
-    fun getLedgerAccount(ledgerAccountId: UUID): CompletableFuture<LedgerAccount>
+    fun getLedgerAccount(ledgerAccountId: LedgerAccountId): CompletableFuture<LedgerAccount>
 
     fun getLedgerAccountBalance(
-        ledgerAccountId: UUID,
+        ledgerAccountId: LedgerAccountId,
         /**
          * The date of the balance in local time. Defaults to today's date.
          */
@@ -54,11 +56,11 @@ interface ModernTreasuryClient : Closeable {
         /**
          * The ID of the ledger transaction
          */
-        id: UUID
+        id: LedgerTransactionId
     ): CompletableFuture<LedgerTransaction>
 
     fun getLedgerTransactions(
-        ledgerId: UUID? = null,
+        ledgerId: LedgerId? = null,
         /**
          * Key/Value metadata pairs to search transactions for.
          */
@@ -97,7 +99,7 @@ interface ModernTreasuryClient : Closeable {
         /**
          * The ID of the ledger transaction to update
          */
-        id: UUID,
+        id: LedgerTransactionId,
         description: String? = null,
         /**
          * To post the ledger transaction, use POSTED. To archive a pending ledger transaction, use ARCHIVED.
@@ -124,7 +126,7 @@ interface ModernTreasuryClient : Closeable {
         /**
          * The ID of the ledger transaction to archive
          */
-        id: UUID,
+        id: LedgerTransactionId,
     ): CompletableFuture<LedgerTransaction> = updateLedgerTransaction(
         id,
         null,

@@ -11,11 +11,11 @@ data class LedgerEntry(
     /**
      * Unique identifier for the ledger entry.
      */
-    val id: UUID,
+    val id: LedgerEntryId,
     /**
      * ID of the ledger account.
      */
-    val ledgerAccountId: UUID,
+    val ledgerAccountId: LedgerAccountId,
     /**
      * Either CREDIT or DEBIT
      */
@@ -43,3 +43,8 @@ enum class LedgerEntryDirection {
     @JsonProperty("debit")
     DEBIT
 }
+
+data class LedgerEntryId(
+    @JsonProperty("ledger_entry_uuid")
+    val uuid: UUID
+)

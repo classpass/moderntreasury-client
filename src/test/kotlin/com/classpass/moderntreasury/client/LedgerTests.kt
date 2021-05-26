@@ -3,6 +3,7 @@ package com.classpass.moderntreasury.client
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.classpass.moderntreasury.model.Ledger
+import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.client.WireMock.post
@@ -36,7 +37,7 @@ class LedgerTests : WireMockClientTest() {
         )
 
         val expectedLedger = Ledger(
-            uuid,
+            LedgerId(uuid),
             "Business Ledger",
             null,
             "USD",

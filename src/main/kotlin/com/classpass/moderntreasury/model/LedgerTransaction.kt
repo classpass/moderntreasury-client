@@ -14,7 +14,7 @@ data class LedgerTransaction(
     /**
      * Unique identifier for the ledger transaction.
      */
-    val id: UUID,
+    val id: LedgerTransactionId,
     /**
      * An optional free-form description for internal use.
      */
@@ -40,7 +40,7 @@ data class LedgerTransaction(
     /**
      * The ID of the ledger this account belongs to.
      */
-    val ledgerId: UUID,
+    val ledgerId: LedgerId,
     /**
      * If the ledger transaction can be reconciled to another object in Modern Treasury, the type will be populated here,
      * otherwise null.
@@ -81,3 +81,8 @@ enum class LedgerableType {
     @JsonProperty("return")
     RETURN
 }
+
+data class LedgerTransactionId(
+    @JsonProperty("ledger_transaction_uuid")
+    val uuid: UUID
+)

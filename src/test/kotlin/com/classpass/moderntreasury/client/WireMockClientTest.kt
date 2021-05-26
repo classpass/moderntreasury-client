@@ -46,10 +46,10 @@ open class WireMockClientTest {
     protected fun ledgerAccountResponse(ledgerId: UUID) = ok(
         """
             {
-                "id": "${UUID.randomUUID()}",
+                "id": {"ledger_account_uuid": "${UUID.randomUUID()}"},
                 "object": "ledger_account",
                 "name": "Operating Bank Account",
-                "ledger_id": "$ledgerId",
+                "ledger_id": {"ledger_uuid": "$ledgerId"},
                 "description": null,
                 "normal_balance": "debit",
                 "lock_version": "23",
@@ -92,24 +92,24 @@ open class WireMockClientTest {
     ) = ok(
         """
         {
-          "id": "$id",
+          "id": {"ledger_transaction_uuid": "$id"},
           "object": "ledger_transaction",
           "live_mode": false,
           "external_id": "zwt3-xxx123",
           "ledgerable_type": null,
           "ledgerable_id": null,
-          "ledger_id": "$ledgerId",
+          "ledger_id": {"ledger_uuid": "$ledgerId"},
           "description": "test 3 pending",
           "status": "pending",
           "ledger_entries": [
             {
-              "id": "$ledgerEntryId",
+              "id": {"ledger_entry_uuid": "$ledgerEntryId"},
               "object": "ledger_entry",
               "live_mode": false,
               "amount": 6,
               "direction": "credit",
-              "ledger_account_id": "$ledgerAccountId",
-              "ledger_transaction_id": "$id",
+              "ledger_account_id": {"ledger_account_uuid": "$ledgerAccountId"},
+              "ledger_transaction_id": {"ledger_transaction_uuid": "$id"},
               "discarded_at": null,
               "created_at": "2021-05-04T21:44:08Z",
               "updated_at": "2021-05-04T21:44:08Z"
@@ -138,7 +138,7 @@ open class WireMockClientTest {
     protected fun ledgerResponse(id: UUID) = ok(
         """
        {
-            "id": "$id",
+            "id": {"ledger_uuid": "$id"},
             "object": "ledger",
             "name": "Business Ledger",
             "description": null,
