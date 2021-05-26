@@ -49,6 +49,10 @@ constructor(val clock: Clock) :
         transactionIdByIk.clear()
     }
 
+    fun clearAllLedgers() {
+        ledgers.clear()
+    }
+
     override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> = supplyAsync {
         val ledger = request.reify(LedgerId(makeId()))
         ledgers[ledger.id] = ledger
@@ -66,6 +70,11 @@ constructor(val clock: Clock) :
         val account = request.reify(LedgerAccountId(makeId()), ledger.id, LOCKVERSION)
         accounts[account.id] = account
         account
+    }
+
+    /* TEST ONLY */
+    fun getLedgers(ledgerIds: List<UUID>): List<Ledger> {
+        return ledgers.filter { kv -> ledgerIds.contains(kv.key) }.values.toList()
     }
 
     override fun getLedgerAccountBalance(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate?): CompletableFuture<LedgerAccountBalance> = supplyAsync {
@@ -107,6 +116,10 @@ constructor(val clock: Clock) :
                 return@supplyAsync if (it != null) it else fail("Internal Error")
             }
         }
+
+        if (request.externalId.length > 0)
+            if (transactions.find { it.externalId == request.externalId } != null)
+                fail("Duplicate External ID")
 
         val metadata = request.metadata.filterNonNullValues()
         val status = request.status ?: LedgerTransactionStatus.PENDING
