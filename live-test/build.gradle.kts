@@ -7,3 +7,7 @@ tasks {
         }
     }
 }
+
+dependencies {
+    testImplementation(project(":client"))
+}
