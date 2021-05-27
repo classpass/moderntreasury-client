@@ -1,8 +1,12 @@
 package com.classpass.moderntreasury.model
 
 data class LedgerAccountBalance(
+    @Deprecated("Use pendingBalance")
     val pending: List<LedgerAccountBalanceItem>,
-    val posted: List<LedgerAccountBalanceItem>
+    @Deprecated("use postedBalance")
+    val posted: List<LedgerAccountBalanceItem>,
+    val pendingBalance: LedgerAccountBalanceItem,
+    val postedBalance: LedgerAccountBalanceItem
 )
 
 data class LedgerAccountBalanceItem(
