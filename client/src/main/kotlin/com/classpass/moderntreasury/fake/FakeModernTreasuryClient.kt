@@ -65,6 +65,10 @@ constructor(val clock: Clock) :
         ledger
     }
 
+    override fun deleteLedger(id: LedgerId): CompletableFuture<Unit> = supplyAsync {
+        ledgers.remove(id) ?: fail("Ledger Not Found")
+    }
+
     override fun getLedgerAccount(ledgerAccountId: LedgerAccountId) = supplyAsync {
         accounts[ledgerAccountId] ?: fail("Ledger Account Not Found")
     }

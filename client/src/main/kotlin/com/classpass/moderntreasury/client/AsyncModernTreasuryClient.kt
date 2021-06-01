@@ -115,6 +115,9 @@ internal class AsyncModernTreasuryClient(
     override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> =
         post("/ledgers", request)
 
+    override fun deleteLedger(id: LedgerId): CompletableFuture<Unit> =
+        delete("/ledgers/$id")
+
     override fun ping(): CompletableFuture<Map<String, String>> {
         return get("/ping")
     }
@@ -149,6 +152,13 @@ internal class AsyncModernTreasuryClient(
     ) = executeRequest<R> {
         preparePatch("$baseUrl$endpoint")
             .setBody(objectMapper.writeValueAsBytes(requestBody))
+            .addHeader("Content-Type", "application/json")
+    }
+
+    private inline fun <reified R> delete(
+        endpoint: String
+    ) = executeRequest<R> {
+        prepareDelete("$baseUrl$endpoint")
             .addHeader("Content-Type", "application/json")
     }
 

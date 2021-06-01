@@ -1,33 +1,25 @@
 package com.classpass.moderntreasury
 
-import assertk.fail
 import com.classpass.moderntreasury.client.ModernTreasuryClient
-import org.junit.jupiter.api.Test
+import com.classpass.moderntreasury.client.asyncModernTreasuryClient
+import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import java.io.IOException
-import java.util.*
+import java.util.Properties
 
-interface ModernTreasuryLiveTest {
-    val client: ModernTreasuryClient
-}
-class ModernTreasuryLiveTestImpl: ModernTreasuryLiveTest {
+/**
+ * Extend this class to write a test that hits the live modern treasury api, using credentials in live-tests.properties
+ */
+open class ModernTreasuryLiveTest {
     private val props = Properties()
-    
-
-
+    val client: ModernTreasuryClient
     init {
         val inputStream = ClassLoader.getSystemResourceAsStream("live-tests.properties")
         try {
-            props.load(inputStream);
-            client = AsyncModernTreasuryClient
+            props.load(inputStream)
+            client =
+                asyncModernTreasuryClient(ModernTreasuryConfig(props.getProperty("orgId"), props.getProperty("apiKey")))
         } catch (e: IOException) {
             throw Exception("Unable to load live-tests.properties", e)
         }
-    }
-}
-
-
-    @Test
-    fun iFail() {
-        fail("live test fail")
     }
 }
