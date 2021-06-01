@@ -32,7 +32,7 @@ class FakeModernTreasuryClientTest {
     val usd_cogs = client.createLedgerAccount("COGS", "", NormalBalanceType.DEBIT, usd.id, NIK).get()
     val us_venue = client.createLedgerAccount("US Venue", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
 
-    @BeforeEach fun clearAllTransactions() = client.clearAllTransactions()
+    @BeforeEach fun clearAllTestTransactions() = client.clearAllTestTransactions()
 
     @Test
     fun `Can create transactions and get balances`() {
