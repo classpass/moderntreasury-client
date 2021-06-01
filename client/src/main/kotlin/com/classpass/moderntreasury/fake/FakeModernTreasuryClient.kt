@@ -216,8 +216,6 @@ constructor(val accountId: LedgerAccountId, val balanceType: NormalBalanceType) 
 
     fun balance(currency: String) = balance().let { balance ->
         LedgerAccountBalance(
-            pending = listOf(LedgerAccountBalanceItem(pendingCredits, pendingDebits, balance.first, currency)),
-            posted = listOf(LedgerAccountBalanceItem(postedCredits, postedDebits, balance.second, currency)),
             pendingBalance = LedgerAccountBalanceItem(pendingCredits, pendingDebits, balance.first, currency),
             postedBalance = LedgerAccountBalanceItem(postedCredits, postedDebits, balance.second, currency)
         )

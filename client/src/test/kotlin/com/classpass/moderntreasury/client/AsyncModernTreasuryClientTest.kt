@@ -152,7 +152,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
                 "id": "${UUID.randomUUID()}",
                 "object": "ledger_account",
                 "name": "Operating Bank Account",
-                "ledger_id": "89c8-xxxxx",
+                "ledger_id": "${UUID.randomUUID()}",
                 "description": null,
                 "normal_balance": "debit",
                 "metadata": {},

@@ -100,7 +100,7 @@ class LedgerTransactionTests : WireMockClientTest() {
                 {
                   "amount": 6,
                   "direction": "debit",
-                  "ledger_account_id": {"ledger_account_uuid": "$ledgerAccountId"},
+                  "ledger_account_id": "$ledgerAccountId",
                   "lock_version": 4
                 }
               ],

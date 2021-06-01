@@ -1,6 +1,8 @@
 package com.classpass.moderntreasury.model
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonValue
 import java.util.UUID
 
 /**
@@ -45,8 +47,11 @@ enum class LedgerEntryDirection {
 }
 
 data class LedgerEntryId(
-    @JsonProperty("ledger_entry_uuid")
     val uuid: UUID
 ) {
+    @JsonCreator
+    constructor(uuidString: String) : this(UUID.fromString(uuidString))
+
+    @JsonValue
     override fun toString() = uuid.toString()
 }
