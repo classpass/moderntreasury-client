@@ -32,7 +32,7 @@ class FakeModernTreasuryClientTest {
     val usd_cogs = client.createLedgerAccount("COGS", "", NormalBalanceType.DEBIT, usd.id, NIK).get()
     val us_venue = client.createLedgerAccount("US Venue", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
 
-    @BeforeEach fun clearAllTransactions() = client.clearAllTransactions()
+    @BeforeEach fun clearAllTestTransactions() = client.clearAllTestTransactions()
 
     @Test
     fun `Can create transactions and get balances`() {
@@ -41,7 +41,7 @@ class FakeModernTreasuryClientTest {
 
         client.createLedgerTransaction(debit, credit)
 
-        val cash = client.getLedgerAccountBalance(usd_cash.id).get().pending[0].amount
+        val cash = client.getLedgerAccountBalance(usd_cash.id).get().pendingBalance.amount
         assertEquals(-100L, cash)
     }
 
@@ -96,7 +96,7 @@ class FakeModernTreasuryClientTest {
         ).get()
 
         assertEquals(tx1.id, tx2.id)
-        val owe = client.getLedgerAccountBalance(us_venue.id).get().pending[0].amount
+        val owe = client.getLedgerAccountBalance(us_venue.id).get().pendingBalance.amount
         assert(100L == owe)
     }
 }

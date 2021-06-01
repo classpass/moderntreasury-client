@@ -41,16 +41,22 @@ constructor(val clock: Clock) :
     // Map idempotency key to actual id.
     private val transactionIdByIk = mutableMapOf<String, LedgerTransactionId>()
 
-    /**
-     * For test purposes, permit to clear all transactions.
-     */
-    fun clearAllTransactions() {
-        transactions.removeAll { true }
+    /* Test API */
+    fun clearAllTestTransactions() {
+        transactions.clear()
         transactionIdByIk.clear()
     }
 
-    fun clearAllLedgers() {
+    /* Test API */
+    fun clearAllTestLedgers() {
         ledgers.clear()
+        accounts.clear()
+        clearAllTestTransactions()
+    }
+
+    /* Test API */
+    fun getTestLedgers(ledgerIds: List<LedgerId>): List<Ledger> {
+        return ledgers.filter { ledgerIds.contains(it.key) }.values.toList()
     }
 
     override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> = supplyAsync {
@@ -59,7 +65,7 @@ constructor(val clock: Clock) :
         ledger
     }
 
-    override fun getLedgerAccount(ledgerAccountId: LedgerAccountId): CompletableFuture<LedgerAccount> = supplyAsync {
+    override fun getLedgerAccount(ledgerAccountId: LedgerAccountId) = supplyAsync {
         accounts[ledgerAccountId] ?: fail("Ledger Account Not Found")
     }
 
@@ -70,11 +76,6 @@ constructor(val clock: Clock) :
         val account = request.reify(LedgerAccountId(makeId()), ledger.id, LOCKVERSION)
         accounts[account.id] = account
         account
-    }
-
-    /* TEST ONLY */
-    fun getLedgers(ledgerIds: List<UUID>): List<Ledger> {
-        return ledgers.filter { kv -> ledgerIds.contains(kv.key) }.values.toList()
     }
 
     override fun getLedgerAccountBalance(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate?): CompletableFuture<LedgerAccountBalance> = supplyAsync {
@@ -196,7 +197,7 @@ constructor(val clock: Clock) :
  * Calculate a running tally of transactions across one ledger account.
  */
 class Accumulator
-constructor(private val accountId: LedgerAccountId, private val balanceType: NormalBalanceType) {
+constructor(val accountId: LedgerAccountId, val balanceType: NormalBalanceType) {
     var pendingDebits = 0L
     var postedDebits = 0L
     var pendingCredits = 0L
