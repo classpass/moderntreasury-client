@@ -191,7 +191,7 @@ internal class AsyncModernTreasuryClient(
     }
 
     internal inline fun <reified T> deserializePaginatedResponse(response: Response): ModernTreasuryPage<T> {
-        val tr = jacksonTypeRef<T>()
+        val tr = jacksonTypeRef<T>() // remove this line to break deserialization for mysterious reflection-related reasons
         val content = deserializeResponse<List<T>>(response)
         val pageInfo = response.extractPageInfo() ?: throw MissingPaginationHeadersException(response)
         return ModernTreasuryPage(pageInfo, content)

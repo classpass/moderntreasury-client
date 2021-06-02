@@ -12,6 +12,7 @@ import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerId
+import com.classpass.moderntreasury.model.LedgerTransaction
 import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.github.tomakehurst.wiremock.client.BasicCredentials
@@ -122,6 +123,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
         assertThat(result.perPage).isEqualTo(3)
         assertThat(result.totalCount).isEqualTo(40)
         assertThat(result.content).hasSize(3)
+        assertThat(result.content[0]).isInstanceOf(LedgerTransaction::class)
     }
 
     @Test
