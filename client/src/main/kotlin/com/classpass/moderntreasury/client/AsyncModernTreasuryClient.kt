@@ -186,10 +186,12 @@ internal class AsyncModernTreasuryClient(
         }
     }
 
-    internal inline fun <reified T> deserializeResponse(response: Response): T =
-        objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
+    internal inline fun <reified T> deserializeResponse(response: Response): T {
+        return objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
+    }
 
     internal inline fun <reified T> deserializePaginatedResponse(response: Response): ModernTreasuryPage<T> {
+        val tr = jacksonTypeRef<T>()
         val content = deserializeResponse<List<T>>(response)
         val pageInfo = response.extractPageInfo() ?: throw MissingPaginationHeadersException(response)
         return ModernTreasuryPage(pageInfo, content)
