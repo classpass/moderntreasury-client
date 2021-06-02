@@ -20,9 +20,9 @@ val NIK = "" // No idempotency key.
 val TODAY = LocalDate.now(CLOCK)
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class FakeModernTreasuryClientTest {
+class ModernTreasuryFakeTest {
 
-    val client = FakeModernTreasuryClient(CLOCK)
+    val client = ModernTreasuryFake(CLOCK)
 
     val usd = client.createLedger("USD", "", "USD", NIK).get()
     val can = client.createLedger("CAN", "", "CAN", NIK).get()
