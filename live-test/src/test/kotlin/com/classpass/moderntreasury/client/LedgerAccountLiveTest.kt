@@ -31,10 +31,10 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
             "client_liveTests_${this::class.simpleName}_${System.currentTimeMillis()}",
             null,
             "usd",
-            "${Math.random()}"
+            nextId()
         ).get()
         ledgerAccount =
-            client.createLedgerAccount("crudtest", null, NormalBalanceType.CREDIT, ledger.id, "${Math.random()}").get()
+            client.createLedgerAccount("crudtest", null, NormalBalanceType.CREDIT, ledger.id, nextId()).get()
     }
 
     @AfterAll
@@ -63,7 +63,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
             "external-id-test",
             null,
             LedgerTransactionStatus.PENDING,
-            "${Math.random()}",
+            com.classpass.moderntreasury.ModernTreasuryLiveTest.Companion.nextId(),
             metadata
         )
 
