@@ -52,19 +52,32 @@ fun Response.toModernTreasuryException(reader: ObjectReader): ModernTreasuryApiE
         ModernTreasuryErrorBody(null, null, null)
     }
 
-    return if (statusCode == 422 && errors.message == VERSION_CONFLICT_MESSAGE) {
-        LedgerAccountVersionConflictException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
-    } else {
-        ModernTreasuryApiException(statusCode, responseBody, errors.code, errors.message, errors.parameter)
-    }
+    val exceptionMappers = listOf(ledgerAccountVersionConflictExceptionMapper, transactionAlreadyPostedExceptionMapper)
+    return exceptionMappers.mapNotNull { it.map(this, errors) }.firstOrNull() ?: ModernTreasuryApiException(
+        statusCode,
+        responseBody,
+        errors.code,
+        errors.message,
+        errors.parameter
+    )
 }
 
-private const val VERSION_CONFLICT_MESSAGE =
-    "The ledger transaction write failed because at least one of the provided ledger account versions is incorrect"
-
 @JsonRootName("errors")
-private data class ModernTreasuryErrorBody(
+internal data class ModernTreasuryErrorBody(
     val code: String?,
     val message: String?,
     val parameter: String?
 )
+
+/**
+ * This interface is used to convert an error Response into one of our subclasses of ModernTreasuryApiException. Each
+ * defined subclass of ModernTreasuryApiException should declare a mapper that implements this interface and include it
+ * in Response.toModernTreasuryException defined above.
+ */
+internal fun interface ModernTreasuryApiExceptionMapper<T : ModernTreasuryApiException> {
+    /**
+     * Map an error response from Modern Treasury to a ModernTreasuryApiException of type T. Returns null if the
+     * response is not an error of type T
+     */
+    fun map(response: Response, errors: ModernTreasuryErrorBody): T?
+}
