@@ -68,5 +68,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         assertThat(queriedTransaction.get()).isEqualTo(transaction)
         assertThat(transactionList.get().totalCount).isEqualTo(1)
         assertThat(transactionList.get().content[0]).isEqualTo(transaction)
+
+        client.updateLedgerTransaction(transaction.id, null, LedgerTransactionStatus.POSTED).get()
     }
 }
