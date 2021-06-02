@@ -21,6 +21,14 @@ To run all tests, execute:
 ./gradlew test
 ```
 
+#### Live Tests
+This project also contains a suite of tests that make requests against the real Modern Treasury api. These tests are
+skipped by default to decouple our CI builds from Modern Treasury itself but you can (and should) run them yourself like
+this:
+1. `cp live-test/src/test/resources/live-tests.properties.example live-test/src/test/resources/live-tests.properties`
+2. fill in your organization id and api key values in `live-test/src/test/resources/live-tests.properties`
+3. run the tests with `./gradlew test -PliveTests`
+
 ## Creating a release
 Merge your changes to main. Checkout the latest main locally.
 Make a tag: `git tag -am "1.0.3" 1.0.3`
