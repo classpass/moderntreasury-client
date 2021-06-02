@@ -23,8 +23,6 @@ class LedgerAccountTests : WireMockClientTest() {
     fun testGetBalance() {
         stubFor(get(urlMatching("/ledger_accounts/.+/balance")).willReturn(ledgerAccountBalanceResponse))
         val expectedDeserialized = LedgerAccountBalance(
-            pending = listOf(LedgerAccountBalanceItem(6, 23, -17, "USD")),
-            posted = listOf(LedgerAccountBalanceItem(0, 11, -11, "USD")),
             pendingBalance = LedgerAccountBalanceItem(6, 23, -17, "USD"),
             postedBalance = LedgerAccountBalanceItem(0, 11, -11, "USD")
         )
@@ -47,7 +45,7 @@ class LedgerAccountTests : WireMockClientTest() {
                 "name": "the_name",
                 "description": "the_description",
                 "normal_balance": "credit",
-                "ledger_id": {"ledger_uuid": "$uuid"},
+                "ledger_id": "$uuid",
                 "metadata": {}
             }
         """

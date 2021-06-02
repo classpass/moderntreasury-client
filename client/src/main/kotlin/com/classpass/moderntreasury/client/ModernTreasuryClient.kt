@@ -155,5 +155,15 @@ interface ModernTreasuryClient : Closeable {
         metadata: RequestMetadata = emptyMap()
     ) = createLedger(CreateLedgerRequest(name, description, currency, idempotencyKey, metadata))
 
+    /**
+     * Delete a ledger. Deleting a ledger will delete all of its associated ledger accounts
+     */
+    fun deleteLedger(
+        /**
+         * The ID of the ledger to be deleted
+         */
+        id: LedgerId
+    ): CompletableFuture<Unit>
+
     fun ping(): CompletableFuture<Map<String, String>>
 }

@@ -115,6 +115,9 @@ internal class AsyncModernTreasuryClient(
     override fun createLedger(request: CreateLedgerRequest): CompletableFuture<Ledger> =
         post("/ledgers", request)
 
+    override fun deleteLedger(id: LedgerId): CompletableFuture<Unit> =
+        delete("/ledgers/$id")
+
     override fun ping(): CompletableFuture<Map<String, String>> {
         return get("/ping")
     }
@@ -152,6 +155,13 @@ internal class AsyncModernTreasuryClient(
             .addHeader("Content-Type", "application/json")
     }
 
+    private inline fun <reified R> delete(
+        endpoint: String
+    ) = executeRequest<R> {
+        prepareDelete("$baseUrl$endpoint")
+            .addHeader("Content-Type", "application/json")
+    }
+
     internal inline fun <reified T> executeRequest(
         crossinline block: AsyncHttpClient.() -> BoundRequestBuilder
     ) = sendRequest(block).thenApply<T>(this::deserializeResponse)
@@ -180,6 +190,7 @@ internal class AsyncModernTreasuryClient(
         objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
 
     internal inline fun <reified T> deserializePaginatedResponse(response: Response): ModernTreasuryPage<T> {
+        val tr = jacksonTypeRef<T>() // remove this line to break deserialization for mysterious reflection-related reasons
         val content = deserializeResponse<List<T>>(response)
         val pageInfo = response.extractPageInfo() ?: throw MissingPaginationHeadersException(response)
         return ModernTreasuryPage(pageInfo, content)

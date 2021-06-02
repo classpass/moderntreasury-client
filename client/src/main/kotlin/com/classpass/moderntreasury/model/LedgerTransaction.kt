@@ -1,6 +1,8 @@
 package com.classpass.moderntreasury.model
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonValue
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -83,8 +85,11 @@ enum class LedgerableType {
 }
 
 data class LedgerTransactionId(
-    @JsonProperty("ledger_transaction_uuid")
     val uuid: UUID
 ) {
+    @JsonCreator
+    constructor(uuidString: String) : this(UUID.fromString(uuidString))
+
+    @JsonValue
     override fun toString() = uuid.toString()
 }
