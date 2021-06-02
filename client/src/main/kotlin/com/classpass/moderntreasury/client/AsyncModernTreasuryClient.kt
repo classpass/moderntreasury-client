@@ -186,9 +186,8 @@ internal class AsyncModernTreasuryClient(
         }
     }
 
-    internal inline fun <reified T> deserializeResponse(response: Response): T {
-        return objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
-    }
+    internal inline fun <reified T> deserializeResponse(response: Response): T =
+        objectReader.forType(jacksonTypeRef<T>()).readValue(response.responseBody)
 
     internal inline fun <reified T> deserializePaginatedResponse(response: Response): ModernTreasuryPage<T> {
         val tr = jacksonTypeRef<T>() // remove this line to break deserialization for mysterious reflection-related reasons
