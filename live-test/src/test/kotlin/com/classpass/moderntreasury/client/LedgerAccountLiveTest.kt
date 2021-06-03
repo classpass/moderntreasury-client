@@ -5,6 +5,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import com.classpass.moderntreasury.ModernTreasuryLiveTest
+import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.exception.TransactionAlreadyPostedException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
@@ -117,5 +118,46 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
             client.updateLedgerTransaction(id = txn.id, status = LedgerTransactionStatus.POSTED).get()
         }
         assertThat(thrown.cause).isNotNull().isInstanceOf(TransactionAlreadyPostedException::class)
+    }
+
+    fun `Ledger entries may have zero-valued amounts`() {
+        val account2 = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        val request = CreateLedgerTransactionRequest(
+            LocalDate.now(),
+            listOf(
+                RequestLedgerEntry(-1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(-1L, LedgerEntryDirection.DEBIT, account2.id),
+            ),
+            "Ledger entries may have zero-valued amounts",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        client.createLedgerTransaction(request).get()
+        val balance = client.getLedgerAccountBalance(ledgerAccount.id).get()
+        assertThat(balance.postedBalance.amount).isEqualTo(0)
+    }
+
+    @Test
+    fun `Ledger entries must have nonnegative amounts`() {
+        val debits = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        val request = CreateLedgerTransactionRequest(
+            LocalDate.now(),
+            listOf(
+                RequestLedgerEntry(-1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(-1L, LedgerEntryDirection.DEBIT, debits.id),
+            ),
+            "Ledger entries must have nonnegative amounts",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        val wrapped = assertFails { client.createLedgerTransaction(request).get() }
+        val failure = wrapped as? ModernTreasuryApiException ?: wrapped.cause as? ModernTreasuryApiException
+        assertThat { failure?.errorMessage }.isEqualTo("Ledger entries must have nonnegative amounts")
     }
 }

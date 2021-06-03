@@ -140,7 +140,7 @@ constructor(val clock: Clock) :
 
         val ledgerId1 = ledgerAccount1.ledgerId
         ledgerEntries.all { ledgerId1 == accounts[it.ledgerAccountId]?.ledgerId } || fail("Inconsistent Ledger Usage")
-        ledgerEntries.all { it.amount >= 0 } || fail("Non-Negative Amounts") // MIGHT not be correct.
+        ledgerEntries.all { it.amount >= 0 } || fail("Ledger entries must have nonnegative amounts")
 
         val transaction = LedgerTransaction(
             id = LedgerTransactionId(makeId()),

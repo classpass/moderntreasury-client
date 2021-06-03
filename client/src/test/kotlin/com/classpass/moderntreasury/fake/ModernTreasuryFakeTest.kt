@@ -62,11 +62,11 @@ class ModernTreasuryFakeTest {
     }
 
     @Test
-    fun `Can not make transactions with negative amounts`() {
+    fun `Ledger entries must have nonnegative amounts`() {
         val debit = RequestLedgerEntry(-100, LedgerEntryDirection.DEBIT, usd_cash.id)
         val credit = RequestLedgerEntry(-100, LedgerEntryDirection.CREDIT, us_venue.id)
 
-        assertApiException("Non-Negative Amounts") { client.createLedgerTransaction(debit, credit) }
+        assertApiException("Ledger entries must have nonnegative amounts") { client.createLedgerTransaction(debit, credit) }
     }
 
     @Test
