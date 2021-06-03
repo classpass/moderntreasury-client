@@ -70,12 +70,12 @@ constructor(val clock: Clock) :
     }
 
     override fun getLedgerAccount(ledgerAccountId: LedgerAccountId) = supplyAsync {
-        accounts[ledgerAccountId] ?: fail("Ledger Account Not Found")
+        accounts[ledgerAccountId] ?: throwApiException("Ledger Account Not Found")
     }
 
     override fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount> = supplyAsync {
         val ledger = ledgers[request.ledgerId]
-            ?: fail("Ledger Not Found")
+            ?: throwApiException("Ledger Not Found")
 
         val account = request.reify(LedgerAccountId(makeId()), ledger.id, LOCKVERSION)
         accounts[account.id] = account
@@ -84,10 +84,10 @@ constructor(val clock: Clock) :
 
     override fun getLedgerAccountBalance(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate?): CompletableFuture<LedgerAccountBalance> = supplyAsync {
         val account = accounts[ledgerAccountId]
-            ?: fail("Ledger Account Not Found")
+            ?: throwApiException("Ledger Account Not Found")
 
         val ledger = ledgers[account.ledgerId]
-            ?: fail("Ledger Not Found")
+            ?: throwApiException("Ledger Not Found")
 
         val tally = Accumulator(account.id, account.normalBalance)
 
@@ -101,7 +101,7 @@ constructor(val clock: Clock) :
 
     override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> {
         val transaction = transactions.find { it.id == id }
-            ?: fail("Transaction Not Found")
+            ?: throwApiException("Transaction Not Found")
         return completedFuture(transaction)
     }
 
@@ -118,13 +118,13 @@ constructor(val clock: Clock) :
             if (request.idempotencyKey in transactionIdByIk) {
                 val id = transactionIdByIk[request.idempotencyKey]!!
                 val it = transactions.find { it.id == id }
-                return@supplyAsync if (it != null) it else fail("Internal Error")
+                return@supplyAsync if (it != null) it else throwApiException("Internal Error")
             }
         }
 
         if (request.externalId.length > 0)
             if (transactions.find { it.externalId == request.externalId } != null)
-                fail("Duplicate External ID")
+                throwApiException("Duplicate External ID")
 
         val metadata = request.metadata.filterNonNullValues()
         val status = request.status ?: LedgerTransactionStatus.PENDING
@@ -134,13 +134,13 @@ constructor(val clock: Clock) :
         // Use first entry to find the ledger.
         val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
         val ledgerAccount1 = accounts[ledgerAccountId1]
-            ?: fail("Ledger Account Not Found")
+            ?: throwApiException("Ledger Account Not Found")
 
         val ledgerEntries = request.ledgerEntries.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }.also { it.validate() }
 
         val ledgerId1 = ledgerAccount1.ledgerId
-        ledgerEntries.all { ledgerId1 == accounts[it.ledgerAccountId]?.ledgerId } || fail("Inconsistent Ledger Usage")
-        ledgerEntries.all { it.amount >= 0 } || fail("Ledger entries must have nonnegative amounts")
+        ledgerEntries.all { ledgerId1 == accounts[it.ledgerAccountId]?.ledgerId } || throwApiException("Inconsistent Ledger Usage")
+        ledgerEntries.all { it.amount >= 0 } || throwApiException("Ledger entries must have nonnegative amounts")
 
         val transaction = LedgerTransaction(
             id = LedgerTransactionId(makeId()),
@@ -165,10 +165,10 @@ constructor(val clock: Clock) :
 
     override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> = supplyAsync {
         val transaction = transactions.find { it.id == request.id }
-            ?: fail("Not Found")
+            ?: throwApiException("Not Found")
 
         if (transaction.status != LedgerTransactionStatus.PENDING)
-            fail("Invalid State")
+            throwApiException("Invalid State")
 
         val ledgerEntries = request.ledgerEntries?.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }?.also { it.validate() }
 
@@ -246,7 +246,7 @@ private fun makeId() = UUID.randomUUID()
 private fun RequestMetadata.filterNonNullValues() =
     this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
 
-fun fail(message: String, parameter: String? = null): Nothing = throw ModernTreasuryApiException(400, null, null, message, parameter)
+fun throwApiException(message: String, parameter: String? = null): Nothing = throw ModernTreasuryApiException(400, null, null, message, parameter)
 
 /**
  * this matches other if all for all keys in this map, the value exists and matches in other.
