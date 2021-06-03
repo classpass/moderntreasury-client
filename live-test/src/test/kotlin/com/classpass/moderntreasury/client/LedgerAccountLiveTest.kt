@@ -2,7 +2,10 @@ package com.classpass.moderntreasury.client
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
 import com.classpass.moderntreasury.ModernTreasuryLiveTest
+import com.classpass.moderntreasury.exception.TransactionAlreadyPostedException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerEntryDirection
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.LocalDate
+import kotlin.test.assertFails
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
@@ -49,6 +53,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
 
     @Test
     fun `make transactions`() {
+        val metadata = mapOf("testName" to this::`make transactions`.name)
         val transactionRequest = CreateLedgerTransactionRequest(
             LocalDate.now(),
             listOf(
@@ -58,17 +63,59 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
             "external-id-test",
             null,
             LedgerTransactionStatus.PENDING,
-            "${Math.random()}"
+            "${Math.random()}",
+            metadata
         )
 
         val transaction = client.createLedgerTransaction(transactionRequest).get()
         val queriedTransaction = client.getLedgerTransaction(transaction.id)
-        val transactionList = client.getLedgerTransactions(ledger.id)
+        val transactionList = client.getLedgerTransactions(ledger.id, metadata)
 
         assertThat(queriedTransaction.get()).isEqualTo(transaction)
         assertThat(transactionList.get().totalCount).isEqualTo(1)
         assertThat(transactionList.get().content[0]).isEqualTo(transaction)
 
         client.updateLedgerTransaction(transaction.id, null, LedgerTransactionStatus.POSTED).get()
+    }
+
+    @Test
+    fun `transaction already posted`() {
+        val transactionRequest = CreateLedgerTransactionRequest(
+            LocalDate.now(),
+            listOf(
+                RequestLedgerEntry(123L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(123L, LedgerEntryDirection.DEBIT, ledgerAccount.id)
+            ),
+            "double-post-test",
+            null,
+            LedgerTransactionStatus.POSTED,
+            "${Math.random()}"
+        )
+
+        val txn = client.createLedgerTransaction(transactionRequest).get()
+        val thrown =
+            assertFails { client.updateLedgerTransaction(id = txn.id, status = LedgerTransactionStatus.POSTED).get() }
+        assertThat(thrown.cause).isNotNull().isInstanceOf(TransactionAlreadyPostedException::class)
+    }
+
+    @Test
+    fun `transaction already archived`() {
+        val transactionRequest = CreateLedgerTransactionRequest(
+            LocalDate.now(),
+            listOf(
+                RequestLedgerEntry(123L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(123L, LedgerEntryDirection.DEBIT, ledgerAccount.id)
+            ),
+            "update-archived-txn-test",
+            null,
+            LedgerTransactionStatus.ARCHIVED,
+            "${Math.random()}"
+        )
+
+        val txn = client.createLedgerTransaction(transactionRequest).get()
+        val thrown = assertFails {
+            client.updateLedgerTransaction(id = txn.id, status = LedgerTransactionStatus.POSTED).get()
+        }
+        assertThat(thrown.cause).isNotNull().isInstanceOf(TransactionAlreadyPostedException::class)
     }
 }
