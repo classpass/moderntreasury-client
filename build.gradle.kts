@@ -8,7 +8,6 @@ plugins {
 
 group = "com.classpass.moderntreasury"
 
-
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jmailen.kotlinter")
@@ -66,8 +65,6 @@ subprojects {
         useJUnitPlatform()
     }
 }
-
-
 
 task("sandbox-test", JavaExec::class) {
     main = "com.classpass.moderntreasury.SandboxTest"
