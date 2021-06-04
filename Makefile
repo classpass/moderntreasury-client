@@ -1,6 +1,7 @@
 .PHONY: help build test
 DEFAULT_GOAL := help
 GRADLE:=$(shell which ./gradlew)
+LIVETESTS := $(if $(shell test -f live-test/src/test/resources/live-tests.properties && echo Ok),-PliveTests,)
 
 #
 # Standard Targets
@@ -19,6 +20,9 @@ test: gradle-check
 
 gradle-assemble:
 	$(GRADLE) assemble
+
+gradle-test:
+	$(GRADLE) test $(LIVETESTS)
 
 gradle-%:
 	$(GRADLE) $*

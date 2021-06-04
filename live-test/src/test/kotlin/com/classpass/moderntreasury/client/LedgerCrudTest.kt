@@ -10,7 +10,7 @@ class LedgerCrudTest : ModernTreasuryLiveTest() {
             "client_liveTests_${this::class.simpleName}_${System.currentTimeMillis()}",
             null,
             "usd",
-            "${Math.random()}"
+            nextId()
         ).get()
         client.deleteLedger(ledger.id).get()
     }

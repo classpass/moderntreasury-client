@@ -5,6 +5,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import com.classpass.moderntreasury.ModernTreasuryLiveTest
+import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.exception.TransactionAlreadyPostedException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
@@ -31,10 +32,10 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
             "client_liveTests_${this::class.simpleName}_${System.currentTimeMillis()}",
             null,
             "usd",
-            "${Math.random()}"
+            nextId()
         ).get()
         ledgerAccount =
-            client.createLedgerAccount("crudtest", null, NormalBalanceType.CREDIT, ledger.id, "${Math.random()}").get()
+            client.createLedgerAccount("crudtest", null, NormalBalanceType.CREDIT, ledger.id, nextId()).get()
     }
 
     @AfterAll
@@ -63,7 +64,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
             "external-id-test",
             null,
             LedgerTransactionStatus.PENDING,
-            "${Math.random()}",
+            com.classpass.moderntreasury.ModernTreasuryLiveTest.Companion.nextId(),
             metadata
         )
 
@@ -117,5 +118,77 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
             client.updateLedgerTransaction(id = txn.id, status = LedgerTransactionStatus.POSTED).get()
         }
         assertThat(thrown.cause).isNotNull().isInstanceOf(TransactionAlreadyPostedException::class)
+    }
+
+    fun `Ledger entries may have zero-valued amounts`() {
+        val account2 = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        val request = CreateLedgerTransactionRequest(
+            LocalDate.now(),
+            listOf(
+                RequestLedgerEntry(-1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(-1L, LedgerEntryDirection.DEBIT, account2.id),
+            ),
+            "Ledger entries may have zero-valued amounts",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        client.createLedgerTransaction(request).get()
+        val balance = client.getLedgerAccountBalance(ledgerAccount.id).get()
+        assertThat(balance.postedBalance.amount).isEqualTo(0)
+    }
+
+    @Test
+    fun `Ledger entries must have nonnegative amounts`() {
+        val debits = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        val request = CreateLedgerTransactionRequest(
+            LocalDate.now(),
+            listOf(
+                RequestLedgerEntry(-1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(-1L, LedgerEntryDirection.DEBIT, debits.id),
+            ),
+            "Ledger entries must have nonnegative amounts",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        val wrapped = assertFails { client.createLedgerTransaction(request).get() }
+        val failure = wrapped as? ModernTreasuryApiException ?: wrapped.cause as? ModernTreasuryApiException
+        assertThat { failure?.errorMessage }.isEqualTo("Ledger entries must have nonnegative amounts")
+    }
+
+    @Test
+    fun `Balance as-of date is inclusive`() {
+        val BEFORE = LocalDate.parse("2021-03-01")
+        val THEDAY = BEFORE.plusDays(1)
+        val AFTER = THEDAY.plusDays(1)
+
+        val debits = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        val request = CreateLedgerTransactionRequest(
+            THEDAY,
+            listOf(
+                RequestLedgerEntry(1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(1L, LedgerEntryDirection.DEBIT, debits.id),
+            ),
+            "Balance as-of date is inclusive",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        client.createLedgerTransaction(request).get()
+
+        val before = client.getLedgerAccountBalance(debits.id, asOfDate = BEFORE).get()
+        val theDay = client.getLedgerAccountBalance(debits.id, asOfDate = THEDAY).get()
+        val after = client.getLedgerAccountBalance(debits.id, asOfDate = AFTER).get()
+
+        assertThat(before.postedBalance.amount).isEqualTo(0)
+        assertThat(theDay.postedBalance.amount).isEqualTo(1)
+        assertThat(after.postedBalance.amount).isEqualTo(1)
     }
 }

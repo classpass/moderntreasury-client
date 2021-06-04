@@ -10,6 +10,9 @@ import java.util.Properties
  * Extend this class to write a test that hits the live modern treasury api, using credentials in live-tests.properties
  */
 open class ModernTreasuryLiveTest {
+    companion object {
+        fun nextId() = Math.random().toString()
+    }
     private val props = Properties()
     val client: ModernTreasuryClient
     init {
