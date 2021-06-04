@@ -160,4 +160,35 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         val failure = wrapped as? ModernTreasuryApiException ?: wrapped.cause as? ModernTreasuryApiException
         assertThat { failure?.errorMessage }.isEqualTo("Ledger entries must have nonnegative amounts")
     }
+
+    @Test
+    fun `Balance as-of date is inclusive`() {
+        val BEFORE = LocalDate.parse("2021-03-01")
+        val THEDAY = BEFORE.plusDays(1)
+        val AFTER = THEDAY.plusDays(1)
+
+        val debits = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        val request = CreateLedgerTransactionRequest(
+            THEDAY,
+            listOf(
+                RequestLedgerEntry(1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(1L, LedgerEntryDirection.DEBIT, debits.id),
+            ),
+            "Balance as-of date is inclusive",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        client.createLedgerTransaction(request).get()
+
+        val before = client.getLedgerAccountBalance(debits.id, asOfDate = BEFORE).get()
+        val theDay = client.getLedgerAccountBalance(debits.id, asOfDate = THEDAY).get()
+        val after = client.getLedgerAccountBalance(debits.id, asOfDate = AFTER).get()
+
+        assertThat(before.postedBalance.amount).isEqualTo(0)
+        assertThat(theDay.postedBalance.amount).isEqualTo(1)
+        assertThat(after.postedBalance.amount).isEqualTo(1)
+    }
 }
