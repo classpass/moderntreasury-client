@@ -169,13 +169,13 @@ constructor(val clock: Clock) :
             ?: throwApiException("Not Found")
 
         if (transaction.status != LedgerTransactionStatus.PENDING) {
-            // Trying to update to POSTED when already POSTED
-            if (request.status == LedgerTransactionStatus.POSTED) {
+            // Trying to update to POSTED/ARCHIVED when already POSTED/ARCHIVED
+            if (request.status != LedgerTransactionStatus.PENDING) {
                 throwAlreadyPostedException()
             }
 
-            // Trying to update, while leaving in PENDING state, when already POSTED
-            throwApiException("Invalid State: ${transaction.status}")
+            // Trying to update, while leaving in PENDING state, when already POSTED/ARCHIVED
+            throwApiException("Invalid state, transaction is: ${transaction.status}")
         }
 
         val ledgerEntries = request.ledgerEntries?.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }?.also { it.validate() }
