@@ -2,6 +2,7 @@ package com.classpass.moderntreasury.fake
 
 import com.classpass.moderntreasury.client.ModernTreasuryClient
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
+import com.classpass.moderntreasury.exception.TransactionAlreadyPostedException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalance
@@ -167,8 +168,15 @@ constructor(val clock: Clock) :
         val transaction = transactions.find { it.id == request.id }
             ?: throwApiException("Not Found")
 
-        if (transaction.status != LedgerTransactionStatus.PENDING)
-            throwApiException("Invalid State")
+        if (transaction.status != LedgerTransactionStatus.PENDING) {
+            // Trying to update to POSTED/ARCHIVED when already POSTED/ARCHIVED
+            if (request.status != LedgerTransactionStatus.PENDING) {
+                throwAlreadyPostedException()
+            }
+
+            // Trying to update, while leaving in PENDING state, when already POSTED/ARCHIVED
+            throwApiException("Invalid state, transaction is: ${transaction.status}")
+        }
 
         val ledgerEntries = request.ledgerEntries?.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }?.also { it.validate() }
 
@@ -247,6 +255,8 @@ private fun RequestMetadata.filterNonNullValues() =
     this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
 
 fun throwApiException(message: String, parameter: String? = null): Nothing = throw ModernTreasuryApiException(400, null, null, message, parameter)
+
+fun throwAlreadyPostedException(): Nothing = throw TransactionAlreadyPostedException()
 
 /**
  * this matches other if all for all keys in this map, the value exists and matches in other.
