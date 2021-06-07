@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.CompletableFuture.supplyAsync
 
-class ModernTreasuryFake
+open class ModernTreasuryFake
 constructor(val clock: Clock) :
     ModernTreasuryClient {
     private val accounts: MutableMap<LedgerAccountId, LedgerAccount> = mutableMapOf()
