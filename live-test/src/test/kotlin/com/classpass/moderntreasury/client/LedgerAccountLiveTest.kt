@@ -53,8 +53,8 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
     }
 
     @Test
-    fun `make transactions`() {
-        val metadata = mapOf("testName" to this::`make transactions`.name)
+    fun `Can make pending transactions and post them`() {
+        val metadata = mapOf("testName" to this::`Can make pending transactions and post them`.name)
         val transactionRequest = CreateLedgerTransactionRequest(
             LocalDate.now(),
             listOf(
@@ -64,7 +64,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
             "external-id-test",
             null,
             LedgerTransactionStatus.PENDING,
-            com.classpass.moderntreasury.ModernTreasuryLiveTest.Companion.nextId(),
+            nextId(),
             metadata
         )
 
@@ -80,7 +80,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
     }
 
     @Test
-    fun `transaction already posted`() {
+    fun `When posting already-posted transaction then throws TransactionAlreadyPostedException`() {
         val transactionRequest = CreateLedgerTransactionRequest(
             LocalDate.now(),
             listOf(
@@ -100,7 +100,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
     }
 
     @Test
-    fun `transaction already archived`() {
+    fun `When posting already-archived transaction then throws TransactionAlreadyPostedException`() {
         val transactionRequest = CreateLedgerTransactionRequest(
             LocalDate.now(),
             listOf(
