@@ -1,6 +1,7 @@
 package com.classpass.moderntreasury.fake
 
 import com.classpass.moderntreasury.client.ModernTreasuryClient
+import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.exception.TransactionAlreadyPostedException
 import com.classpass.moderntreasury.model.Ledger
@@ -158,10 +159,38 @@ constructor(val clock: Clock) :
             LIVEMODE
         )
 
-        transactions.add(transaction)
+        addTransaction(transaction)
+
         if (request.idempotencyKey.length > 0)
             transactionIdByIk[request.idempotencyKey] = transaction.id
         transaction
+    }
+
+    private fun addTransaction(transaction: LedgerTransaction) {
+
+        val accountUpdates: MutableList<() -> Unit> = mutableListOf()
+
+        // For a permanent (POSTED) transaction:
+        // 1. Confirm the lock version is valid
+        // 2. Increment lock version on all accounts in the transaction
+        if (transaction.status == LedgerTransactionStatus.POSTED) {
+            transaction.ledgerEntries.forEach {
+                val ledgerAccount = accounts[it.ledgerAccountId]!!
+                val existingLockVersion = ledgerAccount.lockVersion
+                if (it.lockVersion != existingLockVersion) {
+                    throw LedgerAccountVersionConflictException()
+                }
+                val incrementedLockVersion = existingLockVersion.plus(1)
+                val updatedAccount = ledgerAccount.copy(lockVersion = incrementedLockVersion)
+                accountUpdates.add {
+                    accounts[it.ledgerAccountId] = updatedAccount
+                }
+            }
+        }
+
+        // Safe to update all the accounts now we know there were no lock version conflicts
+        accountUpdates.forEach { it.invoke() }
+        transactions.add(transaction)
     }
 
     override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> = supplyAsync {
@@ -194,7 +223,7 @@ constructor(val clock: Clock) :
         )
 
         transactions.remove(transaction)
-        transactions.add(updated)
+        addTransaction(transaction)
         updated
     }
 
