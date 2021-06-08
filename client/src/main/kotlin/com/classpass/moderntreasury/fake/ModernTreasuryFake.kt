@@ -223,7 +223,7 @@ constructor(val clock: Clock) :
         )
 
         transactions.remove(transaction)
-        addTransaction(transaction)
+        addTransaction(updated)
         updated
     }
 

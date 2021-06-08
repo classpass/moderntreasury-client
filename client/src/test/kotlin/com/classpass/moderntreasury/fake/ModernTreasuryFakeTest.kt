@@ -48,6 +48,20 @@ class ModernTreasuryFakeTest {
     }
 
     @Test
+    fun `Updating transaction to posted affects posted balance`() {
+        val debit1 = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
+        val credit1 = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
+
+        val ledgerTransaction =
+            client.createLedgerTransaction(debit1, credit1, status = LedgerTransactionStatus.PENDING)
+
+        client.updateLedgerTransaction(id = ledgerTransaction.id, status = LedgerTransactionStatus.POSTED).get()
+
+        val cash = client.getLedgerAccountBalance(usd_cash.id).get().postedBalance.amount
+        assertEquals(-100L, cash)
+    }
+
+    @Test
     fun `Forbids unbalanced transactions`() {
         val oops = RequestLedgerEntry(90, LedgerEntryDirection.DEBIT, usd_cash.id)
         val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
