@@ -10,9 +10,7 @@ import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import java.time.Clock
 import java.time.LocalDate
 import java.util.concurrent.ExecutionException
@@ -21,7 +19,6 @@ val CLOCK = Clock.systemUTC()
 val NIK = "" // No idempotency key.
 val TODAY = LocalDate.now(CLOCK)
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ModernTreasuryFakeTest {
 
     val client = ModernTreasuryFake(CLOCK)
@@ -33,8 +30,6 @@ class ModernTreasuryFakeTest {
     val usd_cash = client.createLedgerAccount("Cash", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
     val usd_cogs = client.createLedgerAccount("COGS", "", NormalBalanceType.DEBIT, usd.id, NIK).get()
     val us_venue = client.createLedgerAccount("US Venue", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
-
-    @BeforeEach fun clearAllTestTransactions() = client.clearAllTestTransactions()
 
     @Test
     fun `Can create transactions and get balances`() {
