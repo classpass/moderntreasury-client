@@ -10,9 +10,7 @@ import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 import java.time.Clock
 import java.time.LocalDate
 import java.util.concurrent.ExecutionException
@@ -21,7 +19,6 @@ val CLOCK = Clock.systemUTC()
 val NIK = "" // No idempotency key.
 val TODAY = LocalDate.now(CLOCK)
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ModernTreasuryFakeTest {
 
     val client = ModernTreasuryFake(CLOCK)
@@ -34,8 +31,6 @@ class ModernTreasuryFakeTest {
     val usd_cogs = client.createLedgerAccount("COGS", "", NormalBalanceType.DEBIT, usd.id, NIK).get()
     val us_venue = client.createLedgerAccount("US Venue", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
 
-    @BeforeEach fun clearAllTestTransactions() = client.clearAllTestTransactions()
-
     @Test
     fun `Can create transactions and get balances`() {
         val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
@@ -44,6 +39,20 @@ class ModernTreasuryFakeTest {
         client.createLedgerTransaction(debit, credit)
 
         val cash = client.getLedgerAccountBalance(usd_cash.id).get().pendingBalance.amount
+        assertEquals(-100L, cash)
+    }
+
+    @Test
+    fun `Updating transaction to posted affects posted balance`() {
+        val debit1 = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
+        val credit1 = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
+
+        val ledgerTransaction =
+            client.createLedgerTransaction(debit1, credit1, status = LedgerTransactionStatus.PENDING)
+
+        client.updateLedgerTransaction(id = ledgerTransaction.id, status = LedgerTransactionStatus.POSTED).get()
+
+        val cash = client.getLedgerAccountBalance(usd_cash.id).get().postedBalance.amount
         assertEquals(-100L, cash)
     }
 
