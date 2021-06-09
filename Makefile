@@ -9,7 +9,7 @@ LIVETESTS := $(if $(shell test -f live-test/src/test/resources/live-tests.proper
 
 help:
 	@echo "build:   Compiles the code."
-	@echo "test:    Runs tests."
+	@echo "test:    Runs tests ($(LIVETESTS))"
 
 build: gradle-assemble
 test: gradle-check
@@ -21,8 +21,8 @@ test: gradle-check
 gradle-assemble:
 	$(GRADLE) assemble
 
-gradle-test:
-	$(GRADLE) test $(LIVETESTS)
+gradle-check:
+	$(GRADLE) check $(LIVETESTS)
 
 gradle-%:
 	$(GRADLE) $*
