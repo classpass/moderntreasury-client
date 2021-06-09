@@ -44,11 +44,17 @@ constructor(val clock: Clock) :
     private val transactionIdByIk = mutableMapOf<String, LedgerTransactionId>()
 
     /* Test API */
+    fun clearAllTestTransactions() {
+        transactions.clear()
+        transactionIdByIk.clear()
+        accounts.replaceAll { key, value -> value.copy(lockVersion = 0) }
+    }
+
+    /* Test API */
     fun clearAllTestLedgers() {
         ledgers.clear()
         accounts.clear()
-        transactions.clear()
-        transactionIdByIk.clear()
+        clearAllTestTransactions()
     }
 
     /* Test API */
