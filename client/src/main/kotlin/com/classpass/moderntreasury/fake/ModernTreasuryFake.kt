@@ -139,7 +139,11 @@ constructor(val clock: Clock) :
         val ledgerAccount1 = accounts[ledgerAccountId1]
             ?: throwApiException("Ledger Account Not Found")
 
-        val ledgerEntries = request.ledgerEntries.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }.also { it.validate() }
+        val ledgerEntries = request.ledgerEntries
+            .map {
+                it.reify(LedgerEntryId(makeId()), LOCKVERSION)
+            }
+            .also { it.validate() }
 
         val ledgerId1 = ledgerAccount1.ledgerId
         ledgerEntries.all { ledgerId1 == accounts[it.ledgerAccountId]?.ledgerId } || throwApiException("Inconsistent Ledger Usage")
@@ -208,7 +212,9 @@ constructor(val clock: Clock) :
             throwApiException("Invalid state, transaction is: ${transaction.status}")
         }
 
-        val ledgerEntries = request.ledgerEntries?.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }?.also { it.validate() }
+        val ledgerEntries = request.ledgerEntries
+            ?.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }
+            ?.also { it.validate() }
 
         val metadata = transaction.metadata
             // Remove entries which are specifically set to null in the request.
@@ -306,10 +312,10 @@ private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, l
     LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, lockVersion, this.metadata.filterNonNullValues(), LIVEMODE)
 
 private fun CreateLedgerRequest.reify(id: LedgerId) =
-    Ledger(id, this.name, this.description, this.currency, this.metadata.filterNonNullValues(), LIVEMODE)
+    Ledger(id, name, description, currency, metadata.filterNonNullValues(), LIVEMODE)
 
 private fun RequestLedgerEntry.reify(id: LedgerEntryId, lockVersion: Long) =
-    LedgerEntry(id, this.ledgerAccountId, this.direction, this.amount, lockVersion, LIVEMODE)
+    LedgerEntry(id, ledgerAccountId, direction, amount, lockVersion, LIVEMODE)
 
 /**
  * If an account is credit normal, then a "negative" balance would be one where the debit balance exceeds the credit balance.

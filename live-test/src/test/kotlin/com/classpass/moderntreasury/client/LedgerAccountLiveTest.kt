@@ -23,6 +23,9 @@ import kotlin.test.assertFails
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
+    val BEFORE = LocalDate.parse("2021-03-01")
+    val THEDAY = BEFORE.plusDays(1)
+    val AFTER = THEDAY.plusDays(1)
     private lateinit var ledger: Ledger
     private lateinit var ledgerAccount: LedgerAccount
 
@@ -163,10 +166,6 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
 
     @Test
     fun `Balance as-of date is inclusive`() {
-        val BEFORE = LocalDate.parse("2021-03-01")
-        val THEDAY = BEFORE.plusDays(1)
-        val AFTER = THEDAY.plusDays(1)
-
         val debits = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
 
         val request = CreateLedgerTransactionRequest(
