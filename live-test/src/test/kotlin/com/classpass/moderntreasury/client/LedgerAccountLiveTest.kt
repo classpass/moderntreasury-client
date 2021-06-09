@@ -190,4 +190,37 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         assertThat(theDay.postedBalance.amount).isEqualTo(1)
         assertThat(after.postedBalance.amount).isEqualTo(1)
     }
+
+    @Test
+    fun `lockVersion is optional`() {
+        val ledgerAccount2 = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        val request = CreateLedgerTransactionRequest(
+            THEDAY,
+            listOf(
+                RequestLedgerEntry(1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(1L, LedgerEntryDirection.DEBIT, ledgerAccount2.id),
+            ),
+            "lockVersion is optional 1",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        client.createLedgerTransaction(request).get()
+
+        val request2 = CreateLedgerTransactionRequest(
+            THEDAY,
+            listOf(
+                RequestLedgerEntry(1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(1L, LedgerEntryDirection.DEBIT, ledgerAccount2.id),
+            ),
+            "lockVersion is optional 2",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        client.createLedgerTransaction(request2).get()
+    }
 }
