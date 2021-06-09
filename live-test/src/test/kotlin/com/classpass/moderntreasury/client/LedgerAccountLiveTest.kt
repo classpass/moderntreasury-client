@@ -47,12 +47,14 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
     }
 
     @Test
-    fun `LedgerAccount retrieval and balance checking`() {
+    fun `Can getLedgerAccount and getLedgerAccountBalance`() {
         val queriedLedgerAccount = client.getLedgerAccount(ledgerAccount.id).get()
+        val balance = client.getLedgerAccountBalance(ledgerAccount.id).get()
 
-        assertThat(queriedLedgerAccount).isEqualTo(ledgerAccount)
-
-        println(client.getLedgerAccountBalance(ledgerAccount.id).get())
+        // Can't compare lockVersion
+        val expected = ledgerAccount.copy(lockVersion = 0)
+        val actual = queriedLedgerAccount.copy(lockVersion = 0)
+        assertThat(expected).isEqualTo(actual)
     }
 
     @Test
