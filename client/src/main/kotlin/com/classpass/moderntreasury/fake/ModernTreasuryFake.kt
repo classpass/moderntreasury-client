@@ -141,7 +141,7 @@ constructor(val clock: Clock) :
 
         val ledgerEntries = request.ledgerEntries
             .map {
-                it.reify(LedgerEntryId(makeId()), LOCKVERSION)
+                it.reify(LedgerEntryId(makeId()))
             }
             .also { it.validate() }
 
@@ -182,7 +182,7 @@ constructor(val clock: Clock) :
             transaction.ledgerEntries.forEach {
                 val ledgerAccount = accounts[it.ledgerAccountId]!!
                 val existingLockVersion = ledgerAccount.lockVersion
-                if (it.lockVersion != existingLockVersion) {
+                if (it.lockVersion != null && it.lockVersion != existingLockVersion) {
                     throw LedgerAccountVersionConflictException()
                 }
                 val incrementedLockVersion = existingLockVersion.plus(1)
@@ -213,7 +213,7 @@ constructor(val clock: Clock) :
         }
 
         val ledgerEntries = request.ledgerEntries
-            ?.map { it.reify(LedgerEntryId(makeId()), LOCKVERSION) }
+            ?.map { it.reify(LedgerEntryId(makeId())) }
             ?.also { it.validate() }
 
         val metadata = transaction.metadata
@@ -282,7 +282,6 @@ constructor(val accountId: LedgerAccountId, val balanceType: NormalBalanceType) 
 }
 
 private const val LIVEMODE = false
-private const val LOCKVERSION = 0L
 
 private fun makeId() = UUID.randomUUID()
 
@@ -314,7 +313,7 @@ private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, l
 private fun CreateLedgerRequest.reify(id: LedgerId) =
     Ledger(id, name, description, currency, metadata.filterNonNullValues(), LIVEMODE)
 
-private fun RequestLedgerEntry.reify(id: LedgerEntryId, lockVersion: Long) =
+private fun RequestLedgerEntry.reify(id: LedgerEntryId) =
     LedgerEntry(id, ledgerAccountId, direction, amount, lockVersion, LIVEMODE)
 
 /**
