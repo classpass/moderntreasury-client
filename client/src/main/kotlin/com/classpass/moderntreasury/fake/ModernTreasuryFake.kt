@@ -80,7 +80,7 @@ constructor(val clock: Clock) :
         val ledger = ledgers[request.ledgerId]
             ?: throwApiException("Ledger Not Found")
 
-        val account = request.reify(LedgerAccountId(makeId()), ledger.id, LOCKVERSION)
+        val account = request.reify(LedgerAccountId(makeId()), ledger.id)
         accounts[account.id] = account
         account
     }
@@ -308,8 +308,8 @@ private data class PageInfo(
     override val totalCount: Int
 ) : ModernTreasuryPageInfo
 
-private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId, lockVersion: Long) =
-    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, lockVersion, this.metadata.filterNonNullValues(), LIVEMODE)
+private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId) =
+    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, lockVersion = 0, this.metadata.filterNonNullValues(), LIVEMODE)
 
 private fun CreateLedgerRequest.reify(id: LedgerId) =
     Ledger(id, name, description, currency, metadata.filterNonNullValues(), LIVEMODE)
