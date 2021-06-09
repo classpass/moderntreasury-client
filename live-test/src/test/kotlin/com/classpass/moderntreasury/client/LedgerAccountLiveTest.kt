@@ -161,7 +161,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
 
         val wrapped = assertFails { client.createLedgerTransaction(request).get() }
         val failure = wrapped as? ModernTreasuryApiException ?: wrapped.cause as? ModernTreasuryApiException
-        assertThat { failure?.errorMessage }.isEqualTo("Ledger entries must have nonnegative amounts")
+        assertThat(failure?.errorMessage).isEqualTo("Ledger entries must have nonnegative amounts")
     }
 
     @Test
