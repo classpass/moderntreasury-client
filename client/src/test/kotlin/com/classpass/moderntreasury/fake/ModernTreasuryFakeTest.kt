@@ -10,6 +10,7 @@ import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.LocalDate
@@ -126,6 +127,22 @@ class ModernTreasuryFakeTest {
         assertEquals(tx1.id, tx2.id)
         val owe = client.getLedgerAccountBalance(us_venue.id).get().pendingBalance.amount
         assert(100L == owe)
+    }
+
+    @Nested
+    inner class FakeSpecificMethods {
+        @Test
+        fun `Can clearAllTestTransactions`() {
+            val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, 0)
+            val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, 0)
+            client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED)
+
+            client.clearAllTestTransactions()
+            client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED)
+
+            val balance = client.getLedgerAccountBalance(us_venue.id).get().postedBalance.amount
+            assertEquals(100L, balance)
+        }
     }
 }
 
