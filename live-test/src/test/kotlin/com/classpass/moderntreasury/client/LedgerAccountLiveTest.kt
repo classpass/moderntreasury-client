@@ -23,6 +23,9 @@ import kotlin.test.assertFails
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
+    val BEFORE = LocalDate.parse("2021-03-01")
+    val THEDAY = BEFORE.plusDays(1)
+    val AFTER = THEDAY.plusDays(1)
     private lateinit var ledger: Ledger
     private lateinit var ledgerAccount: LedgerAccount
 
@@ -44,12 +47,14 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
     }
 
     @Test
-    fun `LedgerAccount retrieval and balance checking`() {
+    fun `Can getLedgerAccount and getLedgerAccountBalance`() {
         val queriedLedgerAccount = client.getLedgerAccount(ledgerAccount.id).get()
+        val balance = client.getLedgerAccountBalance(ledgerAccount.id).get()
 
-        assertThat(queriedLedgerAccount).isEqualTo(ledgerAccount)
-
-        println(client.getLedgerAccountBalance(ledgerAccount.id).get())
+        // Can't compare lockVersion
+        val expected = ledgerAccount.copy(lockVersion = 0)
+        val actual = queriedLedgerAccount.copy(lockVersion = 0)
+        assertThat(expected).isEqualTo(actual)
     }
 
     @Test
@@ -158,15 +163,11 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
 
         val wrapped = assertFails { client.createLedgerTransaction(request).get() }
         val failure = wrapped as? ModernTreasuryApiException ?: wrapped.cause as? ModernTreasuryApiException
-        assertThat { failure?.errorMessage }.isEqualTo("Ledger entries must have nonnegative amounts")
+        assertThat(failure?.errorMessage).isEqualTo("Ledger entries must have nonnegative amounts")
     }
 
     @Test
     fun `Balance as-of date is inclusive`() {
-        val BEFORE = LocalDate.parse("2021-03-01")
-        val THEDAY = BEFORE.plusDays(1)
-        val AFTER = THEDAY.plusDays(1)
-
         val debits = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
 
         val request = CreateLedgerTransactionRequest(
@@ -190,5 +191,38 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         assertThat(before.postedBalance.amount).isEqualTo(0)
         assertThat(theDay.postedBalance.amount).isEqualTo(1)
         assertThat(after.postedBalance.amount).isEqualTo(1)
+    }
+
+    @Test
+    fun `lockVersion is optional`() {
+        val ledgerAccount2 = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        val request = CreateLedgerTransactionRequest(
+            THEDAY,
+            listOf(
+                RequestLedgerEntry(1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(1L, LedgerEntryDirection.DEBIT, ledgerAccount2.id),
+            ),
+            "lockVersion is optional 1",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        client.createLedgerTransaction(request).get()
+
+        val request2 = CreateLedgerTransactionRequest(
+            THEDAY,
+            listOf(
+                RequestLedgerEntry(1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(1L, LedgerEntryDirection.DEBIT, ledgerAccount2.id),
+            ),
+            "lockVersion is optional 2",
+            null,
+            LedgerTransactionStatus.POSTED,
+            nextId()
+        )
+
+        client.createLedgerTransaction(request2).get()
     }
 }
