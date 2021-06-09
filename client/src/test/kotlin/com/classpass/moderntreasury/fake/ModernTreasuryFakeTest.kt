@@ -82,6 +82,20 @@ class ModernTreasuryFakeTest {
     }
 
     @Test
+    fun `Supports lockVersion`() {
+        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, 0)
+        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, 0)
+        client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED)
+
+        val cashVersion = client.getLedgerAccount(usd_cash.id).get()
+        val venueVersion = client.getLedgerAccount(us_venue.id).get()
+
+        val debit2 = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, lockVersion = cashVersion.lockVersion)
+        val credit2 = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, lockVersion = venueVersion.lockVersion)
+        client.createLedgerTransaction(debit2, credit2, status = LedgerTransactionStatus.POSTED)
+    }
+
+    @Test
     fun `An exception is thrown when creating a transaction with an outdated lock version`() {
         val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, 0)
         val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, 0)
