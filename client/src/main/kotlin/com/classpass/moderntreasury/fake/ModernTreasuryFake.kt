@@ -45,7 +45,7 @@ open class ModernTreasuryFake :
     fun clearAllTestTransactions() {
         transactions.clear()
         transactionIdByIk.clear()
-        accounts.replaceAll { key, value -> value.copy(lockVersion = 0) }
+        accounts.replaceAll { _, value -> value.copy(lockVersion = 0) }
     }
 
     /* Test API */
