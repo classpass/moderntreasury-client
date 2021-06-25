@@ -25,7 +25,6 @@ import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
-import java.time.Clock
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -33,8 +32,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
 import java.util.concurrent.CompletableFuture.supplyAsync
 
-open class ModernTreasuryFake
-constructor(val clock: Clock) :
+open class ModernTreasuryFake :
     ModernTreasuryClient {
     private val accounts: MutableMap<LedgerAccountId, LedgerAccount> = mutableMapOf()
     private val ledgers: MutableMap<LedgerId, Ledger> = mutableMapOf()

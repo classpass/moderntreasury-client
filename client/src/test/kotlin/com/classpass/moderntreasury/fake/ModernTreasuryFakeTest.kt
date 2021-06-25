@@ -22,7 +22,7 @@ val TODAY = LocalDate.now(CLOCK)
 
 class ModernTreasuryFakeTest {
 
-    val client = ModernTreasuryFake(CLOCK)
+    val client = ModernTreasuryFake()
 
     val usd = client.createLedger("USD", "", "USD", NIK).get()
     val can = client.createLedger("CAN", "", "CAN", NIK).get()
