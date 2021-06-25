@@ -183,7 +183,7 @@ constructor(val clock: Clock) :
                 val ledgerAccount = accounts[it.ledgerAccountId]!!
                 val existingLockVersion = ledgerAccount.lockVersion
                 if (it.lockVersion != null && it.lockVersion != existingLockVersion) {
-                    throw LedgerAccountVersionConflictException()
+                    throwLedgerAccountVersionConflictException()
                 }
                 val incrementedLockVersion = existingLockVersion.plus(1)
                 val updatedAccount = ledgerAccount.copy(lockVersion = incrementedLockVersion)
@@ -205,7 +205,7 @@ constructor(val clock: Clock) :
         if (transaction.status != LedgerTransactionStatus.PENDING) {
             // Trying to update to POSTED/ARCHIVED when already POSTED/ARCHIVED
             if (request.status != LedgerTransactionStatus.PENDING) {
-                throwAlreadyPostedException()
+                throwTransactionAlreadyPostedException()
             }
 
             // Trying to update, while leaving in PENDING state, when already POSTED/ARCHIVED
@@ -290,8 +290,8 @@ private fun RequestMetadata.filterNonNullValues() =
     this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
 
 fun throwApiException(message: String, parameter: String? = null): Nothing = throw ModernTreasuryApiException(400, null, null, message, parameter)
-
-fun throwAlreadyPostedException(): Nothing = throw TransactionAlreadyPostedException()
+fun throwLedgerAccountVersionConflictException(): Nothing = throw LedgerAccountVersionConflictException()
+fun throwTransactionAlreadyPostedException(): Nothing = throw TransactionAlreadyPostedException()
 
 /**
  * this matches other if all for all keys in this map, the value exists and matches in other.
@@ -331,6 +331,6 @@ private fun List<LedgerEntry>.validate() {
     val debits = fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.DEBIT) it.amount else 0 }
     val credits = fold(0L) { sum, it -> sum + if (it.direction == LedgerEntryDirection.CREDIT) it.amount else 0 }
     if (debits != credits) {
-        throw ModernTreasuryApiException(400, null, null, "Transaction debits balance must equal credit balance", "entries")
+        throwApiException("Transaction debits balance must equal credit balance", "entries")
     }
 }
