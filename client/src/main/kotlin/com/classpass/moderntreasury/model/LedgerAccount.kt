@@ -28,7 +28,7 @@ data class LedgerAccount(
      */
     val normalBalance: NormalBalanceType,
     /**
-     * The ...
+     * The posted and pending balances
      */
     val balances: LedgerAccountBalances,
     /**

@@ -74,16 +74,17 @@ internal class AsyncModernTreasuryClient(
     private val objectReader = objectMapper.reader()
 
     override fun createLedgerAccount(
-        request: CreateLedgerAccountRequest,
-
+        request: CreateLedgerAccountRequest
     ): CompletableFuture<LedgerAccount> = post("/ledger_accounts", request)
 
     override fun getLedgerAccount(ledgerAccountId: LedgerAccountId, balancesAsOfDate: LocalDate?): CompletableFuture<LedgerAccount> {
         val queryParams = balancesAsOfDate?.let {
             mapOf("balances[as_of_date]" to listOf(it.toString()))
         } ?: emptyMap()
+
         return get("/ledger_accounts/$ledgerAccountId", queryParams)
     }
+
     override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> =
         get("/ledger_transactions/$id")
 
