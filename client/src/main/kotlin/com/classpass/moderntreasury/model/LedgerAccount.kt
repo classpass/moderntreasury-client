@@ -28,6 +28,10 @@ data class LedgerAccount(
      */
     val normalBalance: NormalBalanceType,
     /**
+     * The ...
+     */
+    val balances: LedgerAccountBalances,
+    /**
      * The ID of the ledger this account belongs to.
      */
     val ledgerId: LedgerId,

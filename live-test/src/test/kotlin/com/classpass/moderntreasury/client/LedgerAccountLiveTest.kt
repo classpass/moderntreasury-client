@@ -49,7 +49,6 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
     @Test
     fun `Can getLedgerAccount and getLedgerAccountBalance`() {
         val queriedLedgerAccount = client.getLedgerAccount(ledgerAccount.id).get()
-        val balance = client.getLedgerAccountBalance(ledgerAccount.id).get()
 
         // Can't compare lockVersion
         val expected = ledgerAccount.copy(lockVersion = 0)
@@ -125,6 +124,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         assertThat(thrown.cause).isNotNull().isInstanceOf(TransactionAlreadyPostedException::class)
     }
 
+    @Test
     fun `Ledger entries may have zero-valued amounts`() {
         val account2 = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
 
@@ -141,7 +141,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         )
 
         client.createLedgerTransaction(request).get()
-        val balance = client.getLedgerAccountBalance(ledgerAccount.id).get()
+        val balance = client.getLedgerAccount(ledgerAccount.id).get().balances
         assertThat(balance.postedBalance.amount).isEqualTo(0)
     }
 
@@ -184,9 +184,9 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
 
         client.createLedgerTransaction(request).get()
 
-        val before = client.getLedgerAccountBalance(debits.id, asOfDate = BEFORE).get()
-        val theDay = client.getLedgerAccountBalance(debits.id, asOfDate = THEDAY).get()
-        val after = client.getLedgerAccountBalance(debits.id, asOfDate = AFTER).get()
+        val before = client.getLedgerAccount(debits.id, balancesAsOfDate = BEFORE).get().balances
+        val theDay = client.getLedgerAccount(debits.id, balancesAsOfDate = THEDAY).get().balances
+        val after = client.getLedgerAccount(debits.id, balancesAsOfDate = AFTER).get().balances
 
         assertThat(before.postedBalance.amount).isEqualTo(0)
         assertThat(theDay.postedBalance.amount).isEqualTo(1)

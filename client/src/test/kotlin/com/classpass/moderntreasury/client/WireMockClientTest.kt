@@ -52,6 +52,20 @@ open class WireMockClientTest {
                 "ledger_id": "$ledgerId",
                 "description": null,
                 "normal_balance": "debit",
+                "balances": {
+                    "pending_balance": {
+                        "credits": 6,
+                        "debits": 23,
+                        "amount": -17,
+                        "currency": "USD"
+                    },
+                  "posted_balance": {
+                        "credits": 0,
+                        "debits": 11,
+                        "amount": -11,
+                        "currency": "USD"
+                  }
+                },
                 "lock_version": "23",
                 "metadata": {},
                 "live_mode": true,

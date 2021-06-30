@@ -2,7 +2,6 @@ package com.classpass.moderntreasury.client
 
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
-import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.LedgerTransaction
@@ -42,15 +41,13 @@ interface ModernTreasuryClient : Closeable {
         )
     )
 
-    fun getLedgerAccount(ledgerAccountId: LedgerAccountId): CompletableFuture<LedgerAccount>
-
-    fun getLedgerAccountBalance(
+    fun getLedgerAccount(
         ledgerAccountId: LedgerAccountId,
         /**
          * The date of the balance in local time. Defaults to today's date.
          */
-        asOfDate: LocalDate? = null
-    ): CompletableFuture<LedgerAccountBalance>
+        balancesAsOfDate: LocalDate? = null
+    ): CompletableFuture<LedgerAccount>
 
     fun getLedgerTransaction(
         /**

@@ -6,7 +6,6 @@ import com.classpass.moderntreasury.exception.RateLimitTimeoutException
 import com.classpass.moderntreasury.exception.toModernTreasuryException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
-import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.LedgerTransaction
@@ -75,23 +74,16 @@ internal class AsyncModernTreasuryClient(
     private val objectReader = objectMapper.reader()
 
     override fun createLedgerAccount(
-        request: CreateLedgerAccountRequest
+        request: CreateLedgerAccountRequest,
+
     ): CompletableFuture<LedgerAccount> = post("/ledger_accounts", request)
 
-    override fun getLedgerAccount(ledgerAccountId: LedgerAccountId): CompletableFuture<LedgerAccount> =
-        get("/ledger_accounts/$ledgerAccountId")
-
-    override fun getLedgerAccountBalance(
-        ledgerAccountId: LedgerAccountId,
-        asOfDate: LocalDate?
-    ): CompletableFuture<LedgerAccountBalance> {
-        val queryParams = asOfDate?.let {
-            mapOf("as_of_date" to listOf(it.toString()))
+    override fun getLedgerAccount(ledgerAccountId: LedgerAccountId, balancesAsOfDate: LocalDate?): CompletableFuture<LedgerAccount> {
+        val queryParams = balancesAsOfDate?.let {
+            mapOf("balances[as_of_date]" to listOf(it.toString()))
         } ?: emptyMap()
-
-        return get("/ledger_accounts/$ledgerAccountId/balance", queryParams)
+        return get("/ledger_accounts/$ledgerAccountId", queryParams)
     }
-
     override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> =
         get("/ledger_transactions/$id")
 

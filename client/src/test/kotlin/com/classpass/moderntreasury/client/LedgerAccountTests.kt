@@ -3,9 +3,8 @@ package com.classpass.moderntreasury.client
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.classpass.moderntreasury.model.LedgerAccount
-import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountBalanceItem
-import com.classpass.moderntreasury.model.LedgerAccountId
+import com.classpass.moderntreasury.model.LedgerAccountBalances
 import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
@@ -18,17 +17,6 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class LedgerAccountTests : WireMockClientTest() {
-
-    @Test
-    fun testGetBalance() {
-        stubFor(get(urlMatching("/ledger_accounts/.+/balance")).willReturn(ledgerAccountBalanceResponse))
-        val expectedDeserialized = LedgerAccountBalance(
-            pendingBalance = LedgerAccountBalanceItem(6, 23, -17, "USD"),
-            postedBalance = LedgerAccountBalanceItem(0, 11, -11, "USD")
-        )
-        val actual = client.getLedgerAccountBalance(LedgerAccountId(UUID.randomUUID())).get()
-        assertThat(actual).isEqualTo(expectedDeserialized)
-    }
 
     @Test
     fun `createLedgerAccount makes a well-formatted request body and deserializes responses properly`() {
@@ -65,6 +53,10 @@ class LedgerAccountTests : WireMockClientTest() {
             lockVersion = 23,
             metadata = emptyMap(),
             liveMode = true,
+            balances = LedgerAccountBalances(
+                pendingBalance = LedgerAccountBalanceItem(6, 23, -17, "USD"),
+                postedBalance = LedgerAccountBalanceItem(0, 11, -11, "USD")
+            )
         )
         assertThat(actualResponse).isEqualTo(expectedDeserialized)
     }

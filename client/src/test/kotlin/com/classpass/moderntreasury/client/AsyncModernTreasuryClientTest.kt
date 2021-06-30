@@ -9,7 +9,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import com.classpass.moderntreasury.exception.MissingPaginationHeadersException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
-import com.classpass.moderntreasury.model.LedgerAccountBalance
+import com.classpass.moderntreasury.model.LedgerAccountBalances
 import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerId
 import com.classpass.moderntreasury.model.LedgerTransaction
@@ -99,7 +99,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
             post(anyUrl()).withHeader("Idempotency-Key", equalTo(expectedIdempotencyKey))
                 .willReturn(ledgerAccountBalanceResponse)
         )
-        assertDoesNotThrow { client.post<LedgerAccountBalance>("/foo", request).get() }
+        assertDoesNotThrow { client.post<LedgerAccountBalances>("/foo", request).get() }
     }
 
     @Test
