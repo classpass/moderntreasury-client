@@ -20,7 +20,7 @@ open class ModernTreasuryLiveTest {
         val inputStream = ClassLoader.getSystemResourceAsStream("live-tests.properties")
         try {
             props.load(inputStream)
-            if(!props.getProperty("apiKey").contains("test")) {
+            if (!props.getProperty("apiKey").contains("test")) {
                 throw IllegalArgumentException("Live tests must use the test API Key!")
             }
             client =
