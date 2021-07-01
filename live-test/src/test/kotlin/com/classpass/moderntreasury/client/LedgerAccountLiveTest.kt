@@ -131,8 +131,8 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         val request = CreateLedgerTransactionRequest(
             LocalDate.now(),
             listOf(
-                RequestLedgerEntry(-1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
-                RequestLedgerEntry(-1L, LedgerEntryDirection.DEBIT, account2.id),
+                RequestLedgerEntry(0L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                RequestLedgerEntry(0L, LedgerEntryDirection.DEBIT, account2.id),
             ),
             "Ledger entries may have zero-valued amounts",
             null,
@@ -141,7 +141,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         )
 
         client.createLedgerTransaction(request).get()
-        val balance = client.getLedgerAccount(ledgerAccount.id).get().balances
+        val balance = client.getLedgerAccount(account2.id).get().balances
         assertThat(balance.postedBalance.amount).isEqualTo(0)
     }
 
