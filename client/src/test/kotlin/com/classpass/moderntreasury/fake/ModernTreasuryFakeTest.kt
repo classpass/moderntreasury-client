@@ -39,7 +39,7 @@ class ModernTreasuryFakeTest {
 
         client.createLedgerTransaction(debit, credit)
 
-        val cash = client.getLedgerAccountBalance(usd_cash.id).get().pendingBalance.amount
+        val cash = client.getLedgerAccount(usd_cash.id).get().balances.pendingBalance.amount
         assertEquals(-100L, cash)
     }
 
@@ -53,7 +53,7 @@ class ModernTreasuryFakeTest {
 
         client.updateLedgerTransaction(id = ledgerTransaction.id, status = LedgerTransactionStatus.POSTED).get()
 
-        val cash = client.getLedgerAccountBalance(usd_cash.id).get().postedBalance.amount
+        val cash = client.getLedgerAccount(usd_cash.id).get().balances.postedBalance.amount
         assertEquals(-100L, cash)
     }
 
@@ -139,7 +139,7 @@ class ModernTreasuryFakeTest {
         ).get()
 
         assertEquals(tx1.id, tx2.id)
-        val owe = client.getLedgerAccountBalance(us_venue.id).get().pendingBalance.amount
+        val owe = client.getLedgerAccount(us_venue.id).get().balances.pendingBalance.amount
         assert(100L == owe)
     }
 
@@ -154,7 +154,7 @@ class ModernTreasuryFakeTest {
             client.clearAllTestTransactions()
             client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED)
 
-            val balance = client.getLedgerAccountBalance(us_venue.id).get().postedBalance.amount
+            val balance = client.getLedgerAccount(us_venue.id).get().balances.postedBalance.amount
             assertEquals(100L, balance)
         }
     }

@@ -1,6 +1,6 @@
 package com.classpass.moderntreasury.model
 
-data class LedgerAccountBalance(
+data class LedgerAccountBalances(
     val pendingBalance: LedgerAccountBalanceItem,
     val postedBalance: LedgerAccountBalanceItem
 )

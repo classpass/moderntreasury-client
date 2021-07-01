@@ -4,6 +4,7 @@ import com.classpass.moderntreasury.client.ModernTreasuryClient
 import com.classpass.moderntreasury.client.asyncModernTreasuryClient
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
 import java.io.IOException
+import java.lang.IllegalArgumentException
 import java.util.Properties
 
 /**
@@ -19,6 +20,9 @@ open class ModernTreasuryLiveTest {
         val inputStream = ClassLoader.getSystemResourceAsStream("live-tests.properties")
         try {
             props.load(inputStream)
+            if (!props.getProperty("apiKey").contains("test")) {
+                throw IllegalArgumentException("Live tests must use the test API Key!")
+            }
             client =
                 asyncModernTreasuryClient(ModernTreasuryConfig(props.getProperty("orgId"), props.getProperty("apiKey")))
         } catch (e: IOException) {

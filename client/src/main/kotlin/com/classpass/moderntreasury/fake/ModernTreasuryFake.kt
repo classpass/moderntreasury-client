@@ -6,8 +6,8 @@ import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.exception.TransactionAlreadyPostedException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
-import com.classpass.moderntreasury.model.LedgerAccountBalance
 import com.classpass.moderntreasury.model.LedgerAccountBalanceItem
+import com.classpass.moderntreasury.model.LedgerAccountBalances
 import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerEntry
 import com.classpass.moderntreasury.model.LedgerEntryDirection
@@ -70,20 +70,27 @@ open class ModernTreasuryFake :
         ledgers.remove(id)
     }
 
-    override fun getLedgerAccount(ledgerAccountId: LedgerAccountId) = supplyAsync {
-        accounts[ledgerAccountId] ?: throwApiException("Ledger Account Not Found")
+    override fun getLedgerAccount(ledgerAccountId: LedgerAccountId, balancesAsOfDate: LocalDate?): CompletableFuture<LedgerAccount> = supplyAsync {
+        val balances = getBalances(ledgerAccountId)
+        accounts[ledgerAccountId] = accounts[ledgerAccountId]?.copy(balances = balances) ?: throwApiException("Ledger Account Not Found")
+
+        accounts[ledgerAccountId]!!
     }
 
     override fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount> = supplyAsync {
         val ledger = ledgers[request.ledgerId]
             ?: throwApiException("Ledger Not Found")
 
-        val account = request.reify(LedgerAccountId(makeId()), ledger.id)
+        val startingBalances = LedgerAccountBalances(
+            LedgerAccountBalanceItem(0, 0, 0, ledger.currency),
+            LedgerAccountBalanceItem(0, 0, 0, ledger.currency),
+        )
+        val account = request.reify(LedgerAccountId(makeId()), ledger.id, startingBalances)
         accounts[account.id] = account
         account
     }
 
-    override fun getLedgerAccountBalance(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate?): CompletableFuture<LedgerAccountBalance> = supplyAsync {
+    private fun getBalances(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate? = null): LedgerAccountBalances {
         val account = accounts[ledgerAccountId]
             ?: throwApiException("Ledger Account Not Found")
 
@@ -97,7 +104,7 @@ open class ModernTreasuryFake :
             .filter { transaction -> transaction.status != LedgerTransactionStatus.ARCHIVED }
             .forEach { transaction -> tally.add(transaction) }
 
-        tally.balance(ledger.currency)
+        return tally.balance(ledger.currency)
     }
 
     override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> {
@@ -257,7 +264,7 @@ constructor(val accountId: LedgerAccountId, val balanceType: NormalBalanceType) 
     }
 
     fun balance(currency: String) = balance().let { balance ->
-        LedgerAccountBalance(
+        LedgerAccountBalances(
             pendingBalance = LedgerAccountBalanceItem(pendingCredits, pendingDebits, balance.first, currency),
             postedBalance = LedgerAccountBalanceItem(postedCredits, postedDebits, balance.second, currency)
         )
@@ -305,8 +312,8 @@ private data class PageInfo(
     override val totalCount: Int
 ) : ModernTreasuryPageInfo
 
-private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId) =
-    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, ledgerId, lockVersion = 0, this.metadata.filterNonNullValues(), LIVEMODE)
+private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId, balances: LedgerAccountBalances) =
+    LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, balances, ledgerId, lockVersion = 0, this.metadata.filterNonNullValues(), LIVEMODE)
 
 private fun CreateLedgerRequest.reify(id: LedgerId) =
     Ledger(id, name, description, currency, metadata.filterNonNullValues(), LIVEMODE)
