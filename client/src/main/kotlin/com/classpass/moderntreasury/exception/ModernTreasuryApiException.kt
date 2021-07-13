@@ -52,7 +52,11 @@ fun Response.toModernTreasuryException(reader: ObjectReader): ModernTreasuryApiE
         ModernTreasuryErrorBody(null, null, null)
     }
 
-    val exceptionMappers = listOf(ledgerAccountVersionConflictExceptionMapper, transactionAlreadyPostedExceptionMapper)
+    val exceptionMappers = listOf(
+        ledgerAccountVersionConflictExceptionMapper,
+        transactionAlreadyPostedExceptionMapper,
+        duplicateExternalIdExceptionMapper
+    )
     return exceptionMappers.mapNotNull { it.map(this, errors) }.firstOrNull() ?: ModernTreasuryApiException(
         statusCode,
         responseBody,
