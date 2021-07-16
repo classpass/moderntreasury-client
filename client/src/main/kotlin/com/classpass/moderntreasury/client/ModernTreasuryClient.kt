@@ -49,6 +49,16 @@ interface ModernTreasuryClient : Closeable {
         balancesAsOfDate: LocalDate? = null
     ): CompletableFuture<LedgerAccount>
 
+    fun getLedgerAccounts(
+        ledgerAccountIds: List<LedgerAccountId>,
+        /**
+         * The date of the balance in local time. Defaults to today's date.
+         */
+        balancesAsOfDate: LocalDate? = null,
+        page: Int = 1,
+        perPage: Int = 25
+    ): CompletableFuture<ModernTreasuryPage<LedgerAccount>>
+
     fun getLedgerTransaction(
         /**
          * The ID of the ledger transaction

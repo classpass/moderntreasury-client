@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.LocalDate
+import kotlin.test.assertEquals
 import kotlin.test.assertFails
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -224,5 +225,53 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         )
 
         client.createLedgerTransaction(request2).get()
+    }
+
+    @Test
+    fun `getLedgerAccounts returns paginated results`() {
+        val account1 = client.createLedgerAccount("crudtest", null, NormalBalanceType.CREDIT, ledger.id, nextId()).get()
+        val account2 = client.createLedgerAccount("crudtest", null, NormalBalanceType.CREDIT, ledger.id, nextId()).get()
+
+        val response = client.getLedgerAccounts(
+            ledgerAccountIds = listOf(account1.id, account2.id),
+            page = 2,
+            perPage = 1
+        ).get()
+
+        assertEquals(1, response.content.size)
+        assertEquals(2, response.page)
+        assertEquals(1, response.perPage)
+        assertEquals(2, response.totalCount)
+        assertEquals(account1.id, response.content[0].id)
+    }
+
+    @Test
+    fun `getLedgerAccounts returns balances with balance as of date`() {
+        val debits = client.createLedgerAccount("debits", null, NormalBalanceType.DEBIT, ledger.id, nextId()).get()
+
+        client.createLedgerTransaction(
+            CreateLedgerTransactionRequest(
+                THEDAY,
+                listOf(
+                    RequestLedgerEntry(1L, LedgerEntryDirection.CREDIT, ledgerAccount.id),
+                    RequestLedgerEntry(1L, LedgerEntryDirection.DEBIT, debits.id),
+                ),
+                "getLedgerAccounts returns balances with balance as of date",
+                null,
+                LedgerTransactionStatus.POSTED,
+                nextId()
+            )
+        ).get()
+
+        val before = client.getLedgerAccounts(listOf(debits.id), balancesAsOfDate = BEFORE)
+            .get().content[0].balances
+        val theDay = client.getLedgerAccounts(listOf(debits.id), balancesAsOfDate = THEDAY)
+            .get().content[0].balances
+        val after = client.getLedgerAccounts(listOf(debits.id), balancesAsOfDate = AFTER)
+            .get().content[0].balances
+
+        assertThat(before.postedBalance.amount).isEqualTo(0)
+        assertThat(theDay.postedBalance.amount).isEqualTo(1)
+        assertThat(after.postedBalance.amount).isEqualTo(1)
     }
 }

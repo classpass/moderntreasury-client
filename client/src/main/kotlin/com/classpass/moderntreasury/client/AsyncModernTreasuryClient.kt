@@ -85,6 +85,21 @@ internal class AsyncModernTreasuryClient(
         return get("/ledger_accounts/$ledgerAccountId", queryParams)
     }
 
+    override fun getLedgerAccounts(
+        ledgerAccountIds: List<LedgerAccountId>,
+        balancesAsOfDate: LocalDate?,
+        page: Int,
+        perPage: Int
+    ): CompletableFuture<ModernTreasuryPage<LedgerAccount>> {
+        val queryParams = mapOf(
+            "balances[as_of_date]" to listOfNotNull(balancesAsOfDate?.toString()),
+            "id[]" to ledgerAccountIds.map { it.toString() },
+            "page" to listOf(page.toString()),
+            "per_page" to listOf(perPage.toString())
+        )
+        return getPaginated("/ledger_accounts", queryParams)
+    }
+
     override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> =
         get("/ledger_transactions/$id")
 
