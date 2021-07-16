@@ -77,6 +77,24 @@ open class ModernTreasuryFake :
         accounts[ledgerAccountId]!!
     }
 
+    override fun getLedgerAccounts(
+        ledgerAccountIds: List<LedgerAccountId>,
+        balancesAsOfDate: LocalDate?,
+        page: Int,
+        perPage: Int
+    ): CompletableFuture<ModernTreasuryPage<LedgerAccount>> = supplyAsync {
+        val accounts = ledgerAccountIds.mapNotNull {
+            accounts[it]?.copy(balances = getBalances(it, asOfDate = balancesAsOfDate))
+        }
+        val modernTreasuryPageInfo = object : ModernTreasuryPageInfo {
+            override val page = page
+            override val perPage = perPage
+            override val totalCount = accounts.size
+        }
+        val content = accounts.drop(page * perPage).take(perPage)
+        ModernTreasuryPage(modernTreasuryPageInfo, content)
+    }
+
     override fun createLedgerAccount(request: CreateLedgerAccountRequest): CompletableFuture<LedgerAccount> = supplyAsync {
         val ledger = ledgers[request.ledgerId]
             ?: throwApiException("Ledger Not Found")
