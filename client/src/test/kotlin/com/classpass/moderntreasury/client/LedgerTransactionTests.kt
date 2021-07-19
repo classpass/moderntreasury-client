@@ -146,16 +146,32 @@ class LedgerTransactionTests : WireMockClientTest() {
         """
         stubFor(
             patch(urlMatching("/ledger_transactions/$uuid$")).withRequestBody(equalToJson(expectedRequestJson))
-                .willReturn(
-                    ledgerTransactionResponse(
-                        UUID.randomUUID(),
-                        UUID.randomUUID(),
-                        UUID.randomUUID(),
-                        UUID.randomUUID()
-                    )
-                )
+                .willReturn(ledgerTransactionResponse())
         )
         assertDoesNotThrow { client.updateLedgerTransaction(request).get() }
+    }
+
+    @Test
+    fun `updateLedgerTransaction does not include null descriptions or status`() {
+        val uuid = UUID.randomUUID()
+        val request = UpdateLedgerTransactionRequest(
+            LedgerTransactionId(uuid),
+            description = null,
+            status = null,
+            metadata = mapOf("foo" to "bar")
+        )
+        val expectedRequestJson = """
+            {
+               "metadata" : {
+                 "foo" : "bar"
+               }
+            }
+        """
+        stubFor(
+            patch(urlMatching("/ledger_transactions/$uuid$")).withRequestBody(equalToJson(expectedRequestJson))
+                .willReturn(ledgerTransactionResponse())
+        )
+        client.updateLedgerTransaction(request).get()
     }
 
     @Test

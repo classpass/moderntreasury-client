@@ -11,10 +11,12 @@ data class UpdateLedgerTransactionRequest(
      */
     @JsonIgnore
     val id: LedgerTransactionId,
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     val description: String? = null,
     /**
      * To post the ledger transaction, use POSTED. To archive a pending ledger transaction, use ARCHIVED.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     val status: LedgerTransactionStatus? = null,
     /**
      * Note that updating entries will overwrite any prior entries on the ledger transaction. If not null, this list

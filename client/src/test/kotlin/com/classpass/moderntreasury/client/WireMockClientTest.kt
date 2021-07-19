@@ -112,10 +112,10 @@ open class WireMockClientTest {
     )
 
     protected fun ledgerTransactionResponse(
-        id: UUID,
-        ledgerId: UUID,
-        ledgerEntryId: UUID,
-        ledgerAccountId: UUID,
+        id: UUID = UUID.randomUUID(),
+        ledgerId: UUID = UUID.randomUUID(),
+        ledgerEntryId: UUID = UUID.randomUUID(),
+        ledgerAccountId: UUID = UUID.randomUUID(),
     ) = ok(
         """
         {
