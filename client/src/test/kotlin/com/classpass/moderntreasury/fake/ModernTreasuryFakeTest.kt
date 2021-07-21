@@ -44,6 +44,30 @@ class ModernTreasuryFakeTest {
     }
 
     @Test
+    fun `getLedgerAccounts returns balances with balance as of date`() {
+        val YESTERDAY = TODAY.minusDays(1)
+        val TOMORROW = TODAY.plusDays(1)
+        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
+        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
+
+        // Posting to BEFORE affects TODAY's balance.
+        val balance1 = client.getLedgerAccount(us_venue.id, TODAY).get().balances.postedBalance.amount
+        client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED, effectiveDate = YESTERDAY)
+        val balance2 = client.getLedgerAccount(us_venue.id, TODAY).get().balances.postedBalance.amount
+        assertEquals(100, balance2 - balance1)
+
+        // Posting to TODAY affects TODAY's balance.
+        client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED, effectiveDate = TODAY)
+        val balance3 = client.getLedgerAccount(us_venue.id, TODAY).get().balances.postedBalance.amount
+        assertEquals(100, balance3 - balance2)
+
+        // Posting to TOMORROW has no effect.
+        client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED, effectiveDate = TOMORROW)
+        val balance4 = client.getLedgerAccount(us_venue.id, TODAY).get().balances.postedBalance.amount
+        assertEquals(0, balance4 - balance3)
+    }
+
+    @Test
     fun `Updating transaction to posted affects posted balance`() {
         val debit1 = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
         val credit1 = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id)
@@ -183,10 +207,11 @@ fun assertApiException(errorMessage: String, it: () -> Unit) {
 
 fun ModernTreasuryClient.createLedgerTransaction(
     vararg entries: RequestLedgerEntry,
-    status: LedgerTransactionStatus = LedgerTransactionStatus.PENDING
+    status: LedgerTransactionStatus = LedgerTransactionStatus.PENDING,
+    effectiveDate: LocalDate = TODAY,
 ) =
     this.createLedgerTransaction(
-        TODAY,
+        effectiveDate,
         entries.toList(),
         "Automatic:${nextId++}",
         "",

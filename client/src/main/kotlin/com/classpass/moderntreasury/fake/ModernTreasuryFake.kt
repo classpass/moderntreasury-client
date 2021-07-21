@@ -71,7 +71,7 @@ open class ModernTreasuryFake :
     }
 
     override fun getLedgerAccount(ledgerAccountId: LedgerAccountId, balancesAsOfDate: LocalDate?): CompletableFuture<LedgerAccount> = supplyAsync {
-        val balances = getBalances(ledgerAccountId)
+        val balances = getBalances(ledgerAccountId, balancesAsOfDate)
         accounts[ledgerAccountId] = accounts[ledgerAccountId]?.copy(balances = balances) ?: throwApiException("Ledger Account Not Found")
 
         accounts[ledgerAccountId]!!
@@ -83,6 +83,7 @@ open class ModernTreasuryFake :
         page: Int,
         perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerAccount>> = supplyAsync {
+        // Create a local copy of ledger account info with computed balance. Does not mutate shared.
         val accounts = ledgerAccountIds.mapNotNull {
             accounts[it]?.copy(balances = getBalances(it, asOfDate = balancesAsOfDate))
         }
@@ -108,7 +109,7 @@ open class ModernTreasuryFake :
         account
     }
 
-    private fun getBalances(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate? = null): LedgerAccountBalances {
+    private fun getBalances(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate?): LedgerAccountBalances {
         val account = accounts[ledgerAccountId]
             ?: throwApiException("Ledger Account Not Found")
 
@@ -120,6 +121,7 @@ open class ModernTreasuryFake :
         transactions
             .filter { transaction -> transaction.ledgerId == ledger.id } // Skip many transactions; Optional, however.
             .filter { transaction -> transaction.status != LedgerTransactionStatus.ARCHIVED }
+            .filter { transaction -> asOfDate == null || transaction.effectiveDate <= asOfDate }
             .forEach { transaction -> tally.add(transaction) }
 
         return tally.balance(ledger.currency)
@@ -179,7 +181,7 @@ open class ModernTreasuryFake :
             metadata = metadata,
             ledgerEntries = ledgerEntries,
             postedAt = postedAt,
-            effectiveDate = nowLocalTZ.toLocalDate(),
+            effectiveDate = request.effectiveDate,
             ledgerId = ledgerAccount1.ledgerId,
             ledgerableType = null,
             ledgerableId = null,
