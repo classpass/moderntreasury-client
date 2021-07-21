@@ -23,6 +23,7 @@ gradle-assemble:
 
 gradle-check:
 	$(GRADLE) check $(LIVETESTS)
+	$(GRADLE) :client:lintKotlin
 
 gradle-%:
 	$(GRADLE) $*
