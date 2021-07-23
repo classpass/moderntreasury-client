@@ -67,10 +67,9 @@ open class ModernTreasuryFake :
     }
 
     override fun getLedgerAccount(ledgerAccountId: LedgerAccountId, balancesAsOfDate: LocalDate?): CompletableFuture<LedgerAccount> = supplyAsync {
+        val account = accounts[ledgerAccountId] ?: throwApiException("Ledger Account Not Found")
         val balances = getBalances(ledgerAccountId, balancesAsOfDate)
-        accounts[ledgerAccountId] = accounts[ledgerAccountId]?.copy(balances = balances) ?: throwApiException("Ledger Account Not Found")
-
-        accounts[ledgerAccountId]!!
+        account.copy(balances = balances)
     }
 
     override fun getLedgerAccounts(
@@ -106,21 +105,23 @@ open class ModernTreasuryFake :
     }
 
     private fun getBalances(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate?): LedgerAccountBalances {
-        val account = accounts[ledgerAccountId]
-            ?: throwApiException("Ledger Account Not Found")
+        synchronized(this) {
+            val account = accounts[ledgerAccountId]
+                ?: throwApiException("Ledger Account Not Found")
 
-        val ledger = ledgers[account.ledgerId]
-            ?: throwApiException("Ledger Not Found")
+            val ledger = ledgers[account.ledgerId]
+                ?: throwApiException("Ledger Not Found")
 
-        val tally = Accumulator(account.id, account.normalBalance)
+            val tally = Accumulator(account.id, account.normalBalance)
 
-        transactions
-            .filter { transaction -> transaction.ledgerId == ledger.id } // Skip many transactions; Optional, however.
-            .filter { transaction -> transaction.status != LedgerTransactionStatus.ARCHIVED }
-            .filter { transaction -> asOfDate == null || transaction.effectiveDate <= asOfDate }
-            .forEach { transaction -> tally.add(transaction) }
+            transactions
+                .filter { transaction -> transaction.ledgerId == ledger.id } // Skip many transactions; Optional, however.
+                .filter { transaction -> transaction.status != LedgerTransactionStatus.ARCHIVED }
+                .filter { transaction -> asOfDate == null || transaction.effectiveDate <= asOfDate }
+                .forEach { transaction -> tally.add(transaction) }
 
-        return tally.balance(ledger.currency)
+            return tally.balance(ledger.currency)
+        }
     }
 
     override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> {
