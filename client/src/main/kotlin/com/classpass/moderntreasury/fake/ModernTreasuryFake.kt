@@ -266,12 +266,6 @@ private const val LIVEMODE = false
 
 private fun makeId() = UUID.randomUUID()
 
-private data class PageInfo(
-    override val page: Int,
-    override val perPage: Int,
-    override val totalCount: Int
-) : ModernTreasuryPageInfo
-
 private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId, balances: LedgerAccountBalances) =
     LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, balances, ledgerId, lockVersion = 0, this.metadata.filterNonNullValues(), LIVEMODE)
 
