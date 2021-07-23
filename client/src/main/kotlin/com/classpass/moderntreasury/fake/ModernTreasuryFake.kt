@@ -1,9 +1,6 @@
 package com.classpass.moderntreasury.fake
 
 import com.classpass.moderntreasury.client.ModernTreasuryClient
-import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictException
-import com.classpass.moderntreasury.exception.ModernTreasuryApiException
-import com.classpass.moderntreasury.exception.TransactionAlreadyPostedException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalanceItem
@@ -18,7 +15,6 @@ import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.ModernTreasuryPageInfo
-import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
@@ -71,10 +67,9 @@ open class ModernTreasuryFake :
     }
 
     override fun getLedgerAccount(ledgerAccountId: LedgerAccountId, balancesAsOfDate: LocalDate?): CompletableFuture<LedgerAccount> = supplyAsync {
+        val account = accounts[ledgerAccountId] ?: throwApiException("Ledger Account Not Found")
         val balances = getBalances(ledgerAccountId, balancesAsOfDate)
-        accounts[ledgerAccountId] = accounts[ledgerAccountId]?.copy(balances = balances) ?: throwApiException("Ledger Account Not Found")
-
-        accounts[ledgerAccountId]!!
+        account.copy(balances = balances)
     }
 
     override fun getLedgerAccounts(
@@ -110,21 +105,23 @@ open class ModernTreasuryFake :
     }
 
     private fun getBalances(ledgerAccountId: LedgerAccountId, asOfDate: LocalDate?): LedgerAccountBalances {
-        val account = accounts[ledgerAccountId]
-            ?: throwApiException("Ledger Account Not Found")
+        synchronized(this) {
+            val account = accounts[ledgerAccountId]
+                ?: throwApiException("Ledger Account Not Found")
 
-        val ledger = ledgers[account.ledgerId]
-            ?: throwApiException("Ledger Not Found")
+            val ledger = ledgers[account.ledgerId]
+                ?: throwApiException("Ledger Not Found")
 
-        val tally = Accumulator(account.id, account.normalBalance)
+            val tally = Accumulator(account.id, account.normalBalance)
 
-        transactions
-            .filter { transaction -> transaction.ledgerId == ledger.id } // Skip many transactions; Optional, however.
-            .filter { transaction -> transaction.status != LedgerTransactionStatus.ARCHIVED }
-            .filter { transaction -> asOfDate == null || transaction.effectiveDate <= asOfDate }
-            .forEach { transaction -> tally.add(transaction) }
+            transactions
+                .filter { transaction -> transaction.ledgerId == ledger.id } // Skip many transactions; Optional, however.
+                .filter { transaction -> transaction.status != LedgerTransactionStatus.ARCHIVED }
+                .filter { transaction -> asOfDate == null || transaction.effectiveDate <= asOfDate }
+                .forEach { transaction -> tally.add(transaction) }
 
-        return tally.balance(ledger.currency)
+            return tally.balance(ledger.currency)
+        }
     }
 
     override fun getLedgerTransaction(id: LedgerTransactionId): CompletableFuture<LedgerTransaction> {
@@ -134,9 +131,9 @@ open class ModernTreasuryFake :
     }
 
     override fun getLedgerTransactions(ledgerId: LedgerId?, metadata: Map<String, String>): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
-        val content = transactions.filter {
-            (ledgerId != null && it.ledgerId == ledgerId) || metadata matches it.metadata
-        }
+        val content = transactions
+            .filter { ledgerId == null || it.ledgerId == ledgerId }
+            .filter { metadata.isEmpty() || metadata matches it.metadata }
         return completedFuture(ModernTreasuryPage(PageInfo(0, content.size, content.size), content))
     }
 
@@ -266,71 +263,9 @@ open class ModernTreasuryFake :
     override fun close() {}
 }
 
-/**
- * Calculate a running tally of transactions across one ledger account.
- */
-class Accumulator
-constructor(val accountId: LedgerAccountId, val balanceType: NormalBalanceType) {
-    var pendingDebits = 0L
-    var postedDebits = 0L
-    var pendingCredits = 0L
-    var postedCredits = 0L
-
-    fun balance(): Pair<Long, Long> {
-        return Pair(
-            balanceType.amount(pendingDebits, pendingCredits),
-            balanceType.amount(postedDebits, postedCredits)
-        )
-    }
-
-    fun balance(currency: String) = balance().let { balance ->
-        LedgerAccountBalances(
-            pendingBalance = LedgerAccountBalanceItem(pendingCredits, pendingDebits, balance.first, currency),
-            postedBalance = LedgerAccountBalanceItem(postedCredits, postedDebits, balance.second, currency)
-        )
-    }
-
-    fun add(transaction: LedgerTransaction) {
-        if (transaction.status == LedgerTransactionStatus.ARCHIVED)
-            return
-
-        val entry = transaction.ledgerEntries.find { it.ledgerAccountId == accountId }
-            ?: return
-
-        val amount = entry.amount
-        if (transaction.status == LedgerTransactionStatus.PENDING) {
-            if (entry.direction == LedgerEntryDirection.CREDIT) pendingCredits += amount else pendingDebits += amount
-        } else if (transaction.status == LedgerTransactionStatus.POSTED) {
-            if (entry.direction == LedgerEntryDirection.CREDIT) postedCredits += amount else postedDebits += amount
-        }
-    }
-}
-
 private const val LIVEMODE = false
 
 private fun makeId() = UUID.randomUUID()
-
-@Suppress("UNCHECKED_CAST")
-private fun RequestMetadata.filterNonNullValues() =
-    this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
-
-fun throwApiException(message: String, parameter: String? = null): Nothing = throw ModernTreasuryApiException(400, null, null, message, parameter)
-fun throwLedgerAccountVersionConflictException(): Nothing = throw LedgerAccountVersionConflictException()
-fun throwTransactionAlreadyPostedException(): Nothing = throw TransactionAlreadyPostedException()
-
-/**
- * this matches other if all for all keys in this map, the value exists and matches in other.
- *
- * Note that (a matches b) does NOT imply (b matches a).
- */
-private infix fun <K, V> Map<K, V>.matches(other: Map<K, V>) =
-    this.all { (k, _) -> other.containsKey(k) && this[k] == other[k] }
-
-private data class PageInfo(
-    override val page: Int,
-    override val perPage: Int,
-    override val totalCount: Int
-) : ModernTreasuryPageInfo
 
 private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId, balances: LedgerAccountBalances) =
     LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, balances, ledgerId, lockVersion = 0, this.metadata.filterNonNullValues(), LIVEMODE)
@@ -342,14 +277,6 @@ private fun RequestLedgerEntry.reify(id: LedgerEntryId) =
     LedgerEntry(id, ledgerAccountId, direction, amount, lockVersion, LIVEMODE)
 
 /**
- * If an account is credit normal, then a "negative" balance would be one where the debit balance exceeds the credit balance.
- *
- * N.B. It seems potentially error-prone to have two similar arguments of the same type.
- */
-fun NormalBalanceType.amount(debits: Long, credits: Long) =
-    if (this == NormalBalanceType.CREDIT) credits - debits else debits - credits
-
-/**
  * Ensure a list of ledger entries in a transaction is valid by requiring the credit balance to equal the debit balance
  */
 private fun List<LedgerEntry>.validate() {
@@ -359,3 +286,7 @@ private fun List<LedgerEntry>.validate() {
         throwApiException("Transaction debits balance must equal credit balance", "entries")
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun RequestMetadata.filterNonNullValues() =
+    this.filter { (_, v) -> v != null }.toMap() as Map<String, String>

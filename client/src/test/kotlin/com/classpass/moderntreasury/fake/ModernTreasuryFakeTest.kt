@@ -8,6 +8,8 @@ import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Nested
@@ -79,6 +81,34 @@ class ModernTreasuryFakeTest {
 
         val cash = client.getLedgerAccount(usd_cash.id).get().balances.postedBalance.amount
         assertEquals(-100L, cash)
+    }
+
+    @Test
+    fun `Can get transactions by ledgerId or metadata`() {
+        val inUsd = client.createLedgerTransaction(
+            description = "",
+            effectiveDate = TODAY,
+            externalId = "Automatic:${nextId++}",
+            idempotencyKey = "",
+            status = LedgerTransactionStatus.PENDING,
+            metadata = mapOf("meta-key" to "good-value"),
+            ledgerEntries = listOf(
+                RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id),
+                RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id),
+            ),
+        ).get()
+
+        val viaCan = client.getLedgerTransactions(can.id).get().content.find { it.id == inUsd.id }
+        assertNull(viaCan)
+
+        val viaUsd = client.getLedgerTransactions(usd.id).get().content.find { it.id == inUsd.id }
+        assertNotNull(viaUsd)
+
+        val viaBadMeta = client.getLedgerTransactions(null, mapOf("meta-key" to "bad-value")).get().content.firstOrNull()
+        assertNull(viaBadMeta)
+
+        val viaMeta = client.getLedgerTransactions(null, mapOf("meta-key" to "good-value")).get().content.firstOrNull()
+        assertNotNull(viaMeta)
     }
 
     @Test
@@ -211,10 +241,10 @@ fun ModernTreasuryClient.createLedgerTransaction(
     effectiveDate: LocalDate = TODAY,
 ) =
     this.createLedgerTransaction(
-        effectiveDate,
-        entries.toList(),
-        "Automatic:${nextId++}",
-        "",
-        status,
-        ""
+        effectiveDate = effectiveDate,
+        ledgerEntries = entries.toList(),
+        externalId = "Automatic:${nextId++}",
+        description = "",
+        status = status,
+        idempotencyKey = ""
     ).get()
