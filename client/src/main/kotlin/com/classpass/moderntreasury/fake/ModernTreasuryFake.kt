@@ -15,7 +15,6 @@ import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import com.classpass.moderntreasury.model.ModernTreasuryPageInfo
-import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
@@ -263,53 +262,9 @@ open class ModernTreasuryFake :
     override fun close() {}
 }
 
-/**
- * Calculate a running tally of transactions across one ledger account.
- */
-class Accumulator
-constructor(val accountId: LedgerAccountId, val balanceType: NormalBalanceType) {
-    var pendingDebits = 0L
-    var postedDebits = 0L
-    var pendingCredits = 0L
-    var postedCredits = 0L
-
-    fun balance(): Pair<Long, Long> {
-        return Pair(
-            balanceType.amount(pendingDebits, pendingCredits),
-            balanceType.amount(postedDebits, postedCredits)
-        )
-    }
-
-    fun balance(currency: String) = balance().let { balance ->
-        LedgerAccountBalances(
-            pendingBalance = LedgerAccountBalanceItem(pendingCredits, pendingDebits, balance.first, currency),
-            postedBalance = LedgerAccountBalanceItem(postedCredits, postedDebits, balance.second, currency)
-        )
-    }
-
-    fun add(transaction: LedgerTransaction) {
-        if (transaction.status == LedgerTransactionStatus.ARCHIVED)
-            return
-
-        val entry = transaction.ledgerEntries.find { it.ledgerAccountId == accountId }
-            ?: return
-
-        val amount = entry.amount
-        if (transaction.status == LedgerTransactionStatus.PENDING) {
-            if (entry.direction == LedgerEntryDirection.CREDIT) pendingCredits += amount else pendingDebits += amount
-        } else if (transaction.status == LedgerTransactionStatus.POSTED) {
-            if (entry.direction == LedgerEntryDirection.CREDIT) postedCredits += amount else postedDebits += amount
-        }
-    }
-}
-
 private const val LIVEMODE = false
 
 private fun makeId() = UUID.randomUUID()
-
-@Suppress("UNCHECKED_CAST")
-private fun RequestMetadata.filterNonNullValues() =
-    this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
 
 /**
  * this matches other if all for all keys in this map, the value exists and matches in other.
@@ -335,14 +290,6 @@ private fun RequestLedgerEntry.reify(id: LedgerEntryId) =
     LedgerEntry(id, ledgerAccountId, direction, amount, lockVersion, LIVEMODE)
 
 /**
- * If an account is credit normal, then a "negative" balance would be one where the debit balance exceeds the credit balance.
- *
- * N.B. It seems potentially error-prone to have two similar arguments of the same type.
- */
-fun NormalBalanceType.amount(debits: Long, credits: Long) =
-    if (this == NormalBalanceType.CREDIT) credits - debits else debits - credits
-
-/**
  * Ensure a list of ledger entries in a transaction is valid by requiring the credit balance to equal the debit balance
  */
 private fun List<LedgerEntry>.validate() {
@@ -352,3 +299,7 @@ private fun List<LedgerEntry>.validate() {
         throwApiException("Transaction debits balance must equal credit balance", "entries")
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun RequestMetadata.filterNonNullValues() =
+    this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
