@@ -1,9 +1,6 @@
 package com.classpass.moderntreasury.fake
 
 import com.classpass.moderntreasury.client.ModernTreasuryClient
-import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictException
-import com.classpass.moderntreasury.exception.ModernTreasuryApiException
-import com.classpass.moderntreasury.exception.TransactionAlreadyPostedException
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerAccountBalanceItem
@@ -313,10 +310,6 @@ private fun makeId() = UUID.randomUUID()
 @Suppress("UNCHECKED_CAST")
 private fun RequestMetadata.filterNonNullValues() =
     this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
-
-fun throwApiException(message: String, parameter: String? = null): Nothing = throw ModernTreasuryApiException(400, null, null, message, parameter)
-fun throwLedgerAccountVersionConflictException(): Nothing = throw LedgerAccountVersionConflictException()
-fun throwTransactionAlreadyPostedException(): Nothing = throw TransactionAlreadyPostedException()
 
 /**
  * this matches other if all for all keys in this map, the value exists and matches in other.
