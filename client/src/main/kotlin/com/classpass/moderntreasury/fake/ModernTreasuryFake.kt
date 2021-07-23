@@ -134,9 +134,9 @@ open class ModernTreasuryFake :
     }
 
     override fun getLedgerTransactions(ledgerId: LedgerId?, metadata: Map<String, String>): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
-        val content = transactions.filter {
-            (ledgerId != null && it.ledgerId == ledgerId) || metadata matches it.metadata
-        }
+        val content = transactions
+            .filter { ledgerId == null || it.ledgerId == ledgerId }
+            .filter { metadata.isEmpty() || metadata matches it.metadata }
         return completedFuture(ModernTreasuryPage(PageInfo(0, content.size, content.size), content))
     }
 
