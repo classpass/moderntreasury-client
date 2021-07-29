@@ -13,6 +13,7 @@ import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.DateQuery
+import com.classpass.moderntreasury.model.request.DateTimeQuery
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
@@ -74,8 +75,8 @@ interface ModernTreasuryClient : Closeable {
          */
         metadata: Map<String, String> = emptyMap(),
         effectiveDate: DateQuery? = null,
-        postedAt: DateQuery? = null,
-        updatedAt: DateQuery? = null
+        postedAt: DateTimeQuery? = null,
+        updatedAt: DateTimeQuery? = null
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>>
 
     fun createLedgerTransaction(
