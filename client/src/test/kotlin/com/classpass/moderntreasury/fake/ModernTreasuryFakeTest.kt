@@ -1,11 +1,17 @@
 package com.classpass.moderntreasury.fake
 
+import assertk.assertThat
+import assertk.assertions.containsAll
+import assertk.assertions.containsOnly
+import assertk.assertions.isEmpty
 import com.classpass.moderntreasury.client.ModernTreasuryClient
 import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerEntryDirection
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
+import com.classpass.moderntreasury.model.request.DateQuery
+import com.classpass.moderntreasury.model.request.DateTimeQuery
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -16,6 +22,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.LocalDate
+import java.time.ZonedDateTime
 import java.util.concurrent.ExecutionException
 
 val CLOCK = Clock.systemUTC()
@@ -109,6 +116,47 @@ class ModernTreasuryFakeTest {
 
         val viaMeta = client.getLedgerTransactions(null, mapOf("meta-key" to "good-value")).get().content.firstOrNull()
         assertNotNull(viaMeta)
+    }
+
+    @Test
+    fun `Can get transactions by dates and times `() {
+        val posted = client.createLedgerTransaction(
+            description = "",
+            effectiveDate = TODAY,
+            externalId = "Automatic:${nextId++}",
+            idempotencyKey = "",
+            status = LedgerTransactionStatus.POSTED,
+            metadata = mapOf("meta-key" to "good-value"),
+            ledgerEntries = listOf(
+                RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id),
+                RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id),
+            ),
+        ).get()
+
+        val pending = client.createLedgerTransaction(
+            description = "",
+            effectiveDate = TODAY,
+            externalId = "Automatic:${nextId++}",
+            idempotencyKey = "",
+            status = LedgerTransactionStatus.PENDING,
+            metadata = mapOf("meta-key" to "good-value"),
+            ledgerEntries = listOf(
+                RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id),
+                RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id),
+            ),
+        ).get()
+
+        val viaEffectiveDateHit = client.getLedgerTransactions(effectiveDate = DateQuery().greaterThanOrEqualTo(TODAY)).get().content.map { it.id }
+        assertThat(viaEffectiveDateHit).containsAll(posted.id, pending.id)
+
+        val viaEffectiveDateMiss = client.getLedgerTransactions(effectiveDate = DateQuery().lessThan(TODAY)).get().content.map { it.id }
+        assertThat(viaEffectiveDateMiss).isEmpty()
+
+        val viaPostedAtHit = client.getLedgerTransactions(postedAt = DateTimeQuery().lessThanOrEqualTo(ZonedDateTime.now(CLOCK))).get().content.map { it.id }
+        assertThat(viaPostedAtHit).containsOnly(posted.id)
+
+        val viaPostedAtMiss = client.getLedgerTransactions(postedAt = DateTimeQuery().equalTo(ZonedDateTime.now(CLOCK).plusMinutes(1))).get().content.map { it.id }
+        assertThat(viaPostedAtMiss).isEmpty()
     }
 
     @Test

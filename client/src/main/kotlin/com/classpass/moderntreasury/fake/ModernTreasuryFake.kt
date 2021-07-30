@@ -21,9 +21,9 @@ import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.DatePreposition
 import com.classpass.moderntreasury.model.request.DateQuery
 import com.classpass.moderntreasury.model.request.DateTimeQuery
+import com.classpass.moderntreasury.model.request.ModernTreasuryTemporalQuery
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
-import com.classpass.moderntreasury.model.request.TemporalQuery
 import com.classpass.moderntreasury.model.request.TemporalQueryPart
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import java.time.LocalDate
@@ -148,7 +148,13 @@ open class ModernTreasuryFake :
             .filter { ledgerId == null || it.ledgerId == ledgerId }
             .filter { metadata.isEmpty() || metadata matches it.metadata }
             .filter { effectiveDate?.test(it.effectiveDate) ?: true }
-            .filter { it.postedAt?.let { txnPostedAt -> postedAt?.test(txnPostedAt) } ?: true }
+            .filter { txn ->
+                if (postedAt == null) {
+                    true
+                } else {
+                    txn.postedAt?.let { txnPostedAt -> postedAt.test(txnPostedAt) } ?: false
+                }
+            }
         // updatedAt not currently implemented in client
         return completedFuture(ModernTreasuryPage(PageInfo(0, content.size, content.size), content))
     }
@@ -308,15 +314,17 @@ private fun List<LedgerEntry>.validate() {
 private fun RequestMetadata.filterNonNullValues() =
     this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
 
-private fun <T : Temporal> TemporalQuery<T>.test(targetTemporal: T): Boolean = this.queryParts.all { it.test(targetTemporal) }
+private fun <T : Temporal> ModernTreasuryTemporalQuery<T>.test(targetTemporal: T): Boolean =
+    this.queryParts.all { it.test(targetTemporal) }
+
 private fun <T : Temporal> TemporalQueryPart<T>.test(targetTemporal: T): Boolean {
     val chronoField = when (targetTemporal) {
         is LocalDate -> ChronoField.EPOCH_DAY
         is ZonedDateTime -> ChronoField.INSTANT_SECONDS
         else -> throw IllegalStateException()
     }
-    val targetEpoch = targetTemporal.get(chronoField)
-    val queryEpoch = this.temporal.get(chronoField)
+    val targetEpoch = targetTemporal.getLong(chronoField)
+    val queryEpoch = this.temporal.getLong(chronoField)
     return when (this.preposition) {
         DatePreposition.GREATER_THAN -> targetEpoch > queryEpoch
         DatePreposition.GREATER_THAN_OR_EQUAL_TO -> targetEpoch >= queryEpoch
