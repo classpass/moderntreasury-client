@@ -18,11 +18,18 @@ import com.classpass.moderntreasury.model.ModernTreasuryPageInfo
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
+import com.classpass.moderntreasury.model.request.DatePreposition
+import com.classpass.moderntreasury.model.request.DateQuery
+import com.classpass.moderntreasury.model.request.DateTimeQuery
+import com.classpass.moderntreasury.model.request.ModernTreasuryTemporalQuery
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
+import com.classpass.moderntreasury.model.request.TemporalQueryPart
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import java.time.LocalDate
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoField
+import java.time.temporal.Temporal
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletableFuture.completedFuture
@@ -130,68 +137,84 @@ open class ModernTreasuryFake :
         return completedFuture(transaction)
     }
 
-    override fun getLedgerTransactions(ledgerId: LedgerId?, metadata: Map<String, String>): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
+    override fun getLedgerTransactions(
+        ledgerId: LedgerId?,
+        metadata: Map<String, String>,
+        effectiveDate: DateQuery?,
+        postedAt: DateTimeQuery?,
+        updatedAt: DateTimeQuery?
+    ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val content = transactions
             .filter { ledgerId == null || it.ledgerId == ledgerId }
             .filter { metadata.isEmpty() || metadata matches it.metadata }
+            .filter { effectiveDate?.test(it.effectiveDate) ?: true }
+            .filter { txn ->
+                if (postedAt == null) {
+                    true
+                } else {
+                    txn.postedAt?.let { txnPostedAt -> postedAt.test(txnPostedAt) } ?: false
+                }
+            }
+        // updatedAt not currently implemented in client
         return completedFuture(ModernTreasuryPage(PageInfo(0, content.size, content.size), content))
     }
 
-    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> = supplyAsync {
-        // Support idempotent requests.
-        if (request.idempotencyKey.length > 0) {
-            if (request.idempotencyKey in transactionIdByIk) {
-                val id = transactionIdByIk[request.idempotencyKey]!!
-                val it = transactions.find { it.id == id }
-                return@supplyAsync if (it != null) it else throwApiException("Internal Error")
+    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
+        supplyAsync {
+            // Support idempotent requests.
+            if (request.idempotencyKey.length > 0) {
+                if (request.idempotencyKey in transactionIdByIk) {
+                    val id = transactionIdByIk[request.idempotencyKey]!!
+                    val it = transactions.find { it.id == id }
+                    return@supplyAsync if (it != null) it else throwApiException("Internal Error")
+                }
             }
+
+            if (request.externalId.length > 0)
+                if (transactions.find { it.externalId == request.externalId } != null)
+                    throwApiException("Duplicate External ID")
+
+            val metadata = request.metadata.filterNonNullValues()
+            val status = request.status ?: LedgerTransactionStatus.PENDING
+            val nowLocalTZ = ZonedDateTime.now()
+            val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
+
+            // Use first entry to find the ledger.
+            val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
+            val ledgerAccount1 = accounts[ledgerAccountId1]
+                ?: throwApiException("Ledger Account Not Found")
+
+            val ledgerEntries = request.ledgerEntries
+                .map {
+                    it.reify(LedgerEntryId(makeId()))
+                }
+                .also { it.validate() }
+
+            val ledgerId1 = ledgerAccount1.ledgerId
+            ledgerEntries.all { ledgerId1 == accounts[it.ledgerAccountId]?.ledgerId } || throwApiException("Inconsistent Ledger Usage")
+            ledgerEntries.all { it.amount >= 0 } || throwApiException("Ledger entries must have nonnegative amounts")
+
+            val transaction = LedgerTransaction(
+                id = LedgerTransactionId(makeId()),
+                description = request.description,
+                status = status,
+                metadata = metadata,
+                ledgerEntries = ledgerEntries,
+                postedAt = postedAt,
+                effectiveDate = request.effectiveDate,
+                ledgerId = ledgerAccount1.ledgerId,
+                ledgerableType = null,
+                ledgerableId = null,
+                request.externalId,
+                LIVEMODE
+            )
+
+            addTransaction(transaction)
+
+            if (request.idempotencyKey.length > 0)
+                transactionIdByIk[request.idempotencyKey] = transaction.id
+            transaction
         }
-
-        if (request.externalId.length > 0)
-            if (transactions.find { it.externalId == request.externalId } != null)
-                throwApiException("Duplicate External ID")
-
-        val metadata = request.metadata.filterNonNullValues()
-        val status = request.status ?: LedgerTransactionStatus.PENDING
-        val nowLocalTZ = ZonedDateTime.now()
-        val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
-
-        // Use first entry to find the ledger.
-        val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
-        val ledgerAccount1 = accounts[ledgerAccountId1]
-            ?: throwApiException("Ledger Account Not Found")
-
-        val ledgerEntries = request.ledgerEntries
-            .map {
-                it.reify(LedgerEntryId(makeId()))
-            }
-            .also { it.validate() }
-
-        val ledgerId1 = ledgerAccount1.ledgerId
-        ledgerEntries.all { ledgerId1 == accounts[it.ledgerAccountId]?.ledgerId } || throwApiException("Inconsistent Ledger Usage")
-        ledgerEntries.all { it.amount >= 0 } || throwApiException("Ledger entries must have nonnegative amounts")
-
-        val transaction = LedgerTransaction(
-            id = LedgerTransactionId(makeId()),
-            description = request.description,
-            status = status,
-            metadata = metadata,
-            ledgerEntries = ledgerEntries,
-            postedAt = postedAt,
-            effectiveDate = request.effectiveDate,
-            ledgerId = ledgerAccount1.ledgerId,
-            ledgerableType = null,
-            ledgerableId = null,
-            request.externalId,
-            LIVEMODE
-        )
-
-        addTransaction(transaction)
-
-        if (request.idempotencyKey.length > 0)
-            transactionIdByIk[request.idempotencyKey] = transaction.id
-        transaction
-    }
 
     private fun addTransaction(transaction: LedgerTransaction) {
 
@@ -290,3 +313,23 @@ private fun List<LedgerEntry>.validate() {
 @Suppress("UNCHECKED_CAST")
 private fun RequestMetadata.filterNonNullValues() =
     this.filter { (_, v) -> v != null }.toMap() as Map<String, String>
+
+private fun <T : Temporal> ModernTreasuryTemporalQuery<T>.test(targetTemporal: T): Boolean =
+    this.queryParts.all { it.test(targetTemporal) }
+
+private fun <T : Temporal> TemporalQueryPart<T>.test(targetTemporal: T): Boolean {
+    val chronoField = when (targetTemporal) {
+        is LocalDate -> ChronoField.EPOCH_DAY
+        is ZonedDateTime -> ChronoField.INSTANT_SECONDS
+        else -> throw IllegalStateException()
+    }
+    val targetEpoch = targetTemporal.getLong(chronoField)
+    val queryEpoch = this.temporal.getLong(chronoField)
+    return when (this.preposition) {
+        DatePreposition.GREATER_THAN -> targetEpoch > queryEpoch
+        DatePreposition.GREATER_THAN_OR_EQUAL_TO -> targetEpoch >= queryEpoch
+        DatePreposition.LESS_THAN -> targetEpoch < queryEpoch
+        DatePreposition.LESS_THAN_OR_EQUAL_TO -> targetEpoch <= queryEpoch
+        DatePreposition.EQUAL_TO -> targetEpoch == queryEpoch
+    }
+}

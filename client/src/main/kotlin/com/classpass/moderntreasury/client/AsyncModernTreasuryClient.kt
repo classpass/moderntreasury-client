@@ -15,6 +15,8 @@ import com.classpass.moderntreasury.model.extractPageInfo
 import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
+import com.classpass.moderntreasury.model.request.DateQuery
+import com.classpass.moderntreasury.model.request.DateTimeQuery
 import com.classpass.moderntreasury.model.request.IdempotentRequest
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.toQueryParams
@@ -105,11 +107,17 @@ internal class AsyncModernTreasuryClient(
 
     override fun getLedgerTransactions(
         ledgerId: LedgerId?,
-        metadata: Map<String, String>
+        metadata: Map<String, String>,
+        effectiveDate: DateQuery?,
+        postedAt: DateTimeQuery?,
+        updatedAt: DateTimeQuery?
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val queryParams = mapOf(
             "ledger_id" to listOfNotNull(ledgerId?.toString()),
-        ).plus(metadata.toQueryParams())
+        ).plus(effectiveDate?.toQueryParams("effective_date") ?: emptyMap())
+            .plus(postedAt?.toQueryParams("posted_at") ?: emptyMap())
+            .plus(updatedAt?.toQueryParams("updated_at") ?: emptyMap())
+            .plus(metadata.toQueryParams())
 
         return getPaginated("/ledger_transactions", queryParams)
     }
