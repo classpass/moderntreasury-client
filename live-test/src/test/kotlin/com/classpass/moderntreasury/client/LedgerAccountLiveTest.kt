@@ -75,7 +75,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
 
         val transaction = client.createLedgerTransaction(transactionRequest).get()
         val queriedTransaction = client.getLedgerTransaction(transaction.id).get()
-        val transactionList = client.getLedgerTransactions(ledger.id, metadata).get()
+        val transactionList = client.getLedgerTransactions(ledger.id, null, metadata).get()
 
         assertThat(queriedTransaction).isEqualTo(transaction)
         assertThat(transactionList.totalCount).isEqualTo(1)

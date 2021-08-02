@@ -73,6 +73,7 @@ interface ModernTreasuryClient : Closeable {
         /**
          * Key/Value metadata pairs to search transactions for.
          */
+        ledgerAccountId: LedgerAccountId? = null,
         metadata: Map<String, String> = emptyMap(),
         effectiveDate: DateQuery? = null,
         postedAt: DateTimeQuery? = null,

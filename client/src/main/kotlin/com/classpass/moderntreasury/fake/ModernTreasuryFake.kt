@@ -139,6 +139,7 @@ open class ModernTreasuryFake :
 
     override fun getLedgerTransactions(
         ledgerId: LedgerId?,
+        ledgerAccountId: LedgerAccountId?,
         metadata: Map<String, String>,
         effectiveDate: DateQuery?,
         postedAt: DateTimeQuery?,
@@ -155,6 +156,7 @@ open class ModernTreasuryFake :
                     txn.postedAt?.let { txnPostedAt -> postedAt.test(txnPostedAt) } ?: false
                 }
             }
+            .filter { ledgerAccountId == null || it.ledgerEntries.map { entry -> entry.ledgerAccountId }.contains(ledgerAccountId) }
         // updatedAt not currently implemented in client
         return completedFuture(ModernTreasuryPage(PageInfo(0, content.size, content.size), content))
     }

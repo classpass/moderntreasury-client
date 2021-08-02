@@ -223,7 +223,7 @@ class LedgerTransactionTests : WireMockClientTest() {
                 )
         )
 
-        assertDoesNotThrow { client.getLedgerTransactions(null, metadata).get() }
+        assertDoesNotThrow { client.getLedgerTransactions(null, null, metadata).get() }
     }
 
     @Test
