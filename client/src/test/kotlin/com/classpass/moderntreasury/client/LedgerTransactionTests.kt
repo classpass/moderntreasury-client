@@ -294,5 +294,4 @@ class LedgerTransactionTests : WireMockClientTest() {
 
         assertDoesNotThrow { client.getLedgerTransactions(null, updatedAt = dateTimeQuery, postedAt = dateTimeQuery).get() }
     }
-
 }
