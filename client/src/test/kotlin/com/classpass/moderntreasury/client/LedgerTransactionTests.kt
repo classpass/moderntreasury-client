@@ -295,35 +295,4 @@ class LedgerTransactionTests : WireMockClientTest() {
         assertDoesNotThrow { client.getLedgerTransactions(null, updatedAt = dateTimeQuery, postedAt = dateTimeQuery).get() }
     }
 
-    @Test
-    fun `getLedgerTransactions postedAt query param serialization`() {
-        // We're just testing serialization so its fine that this combination of date ranges is impossible
-        val dateQuery: DateQuery = DateQuery().greaterThan(LocalDate.of(1987, 5, 13))
-            .greaterThanOrEqualTo(LocalDate.of(1986, 10, 7))
-            .lessThan(LocalDate.of(2021, 7, 28))
-            .lessThanOrEqualTo(LocalDate.of(1997, 8, 29))
-            .equalTo(LocalDate.of(2019, 3, 25))
-
-        stubFor(
-            get(anyUrl())
-                .withQueryParam("effective_date%5Bgt%5D", equalTo("1987-05-13"))
-                .withQueryParam("effective_date%5Bgte%5D", equalTo("1986-10-07"))
-                .withQueryParam("effective_date%5Blt%5D", equalTo("2021-07-28"))
-                .withQueryParam("effective_date%5Blte%5D", equalTo("1997-08-29"))
-                .withQueryParam("effective_date%5Beq%5D", equalTo("2019-03-25"))
-                .willReturn(
-                    ledgerTransactionsListResponse(
-                        UUID.randomUUID(),
-                        UUID.randomUUID(),
-                        UUID.randomUUID(),
-                        UUID.randomUUID()
-                    )
-                        .withHeader("x-page", "1")
-                        .withHeader("x-per-page", "3")
-                        .withHeader("x-total-count", "40")
-                )
-        )
-
-        assertDoesNotThrow { client.getLedgerTransactions(null, effectiveDate = dateQuery).get() }
-    }
 }
