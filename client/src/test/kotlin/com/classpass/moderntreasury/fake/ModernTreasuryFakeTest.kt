@@ -120,10 +120,10 @@ class ModernTreasuryFakeTest {
         assertNotNull(viaMeta)
 
         val viaLedgerAccountId = client.getLedgerTransactions(ledgerAccountId = usd_cash.id).get().content.find { it.id == inUsd.id }
-        assertNotNull(viaUsd)
+        assertNotNull(viaLedgerAccountId)
 
         val viaBadLedgerAccountId = client.getLedgerTransactions(ledgerAccountId = LedgerAccountId(UUID.randomUUID())).get().content.find { it.id == inUsd.id }
-        assertNull(viaUsd)
+        assertNull(viaBadLedgerAccountId)
     }
 
     @Test

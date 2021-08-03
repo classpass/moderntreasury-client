@@ -71,9 +71,12 @@ interface ModernTreasuryClient : Closeable {
     fun getLedgerTransactions(
         ledgerId: LedgerId? = null,
         /**
-         * Key/Value metadata pairs to search transactions for.
+         * Returns ledger transactions by the presence of this ledger account on either side of the transaction
          */
         ledgerAccountId: LedgerAccountId? = null,
+        /**
+         * Key/Value metadata pairs to search transactions for.
+         */
         metadata: Map<String, String> = emptyMap(),
         effectiveDate: DateQuery? = null,
         postedAt: DateTimeQuery? = null,
