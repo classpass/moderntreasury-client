@@ -7,6 +7,7 @@ import assertk.assertions.isEmpty
 import com.classpass.moderntreasury.client.ModernTreasuryClient
 import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
+import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerEntryDirection
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZonedDateTime
+import java.util.UUID
 import java.util.concurrent.ExecutionException
 
 val CLOCK = Clock.systemUTC()
@@ -91,7 +93,7 @@ class ModernTreasuryFakeTest {
     }
 
     @Test
-    fun `Can get transactions by ledgerId or metadata`() {
+    fun `Can get transactions by ledgerId, ledgerAccountId, or metadata`() {
         val inUsd = client.createLedgerTransaction(
             description = "",
             effectiveDate = TODAY,
@@ -111,11 +113,17 @@ class ModernTreasuryFakeTest {
         val viaUsd = client.getLedgerTransactions(usd.id).get().content.find { it.id == inUsd.id }
         assertNotNull(viaUsd)
 
-        val viaBadMeta = client.getLedgerTransactions(null, mapOf("meta-key" to "bad-value")).get().content.firstOrNull()
+        val viaBadMeta = client.getLedgerTransactions(metadata = mapOf("meta-key" to "bad-value")).get().content.firstOrNull()
         assertNull(viaBadMeta)
 
-        val viaMeta = client.getLedgerTransactions(null, mapOf("meta-key" to "good-value")).get().content.firstOrNull()
+        val viaMeta = client.getLedgerTransactions(metadata = mapOf("meta-key" to "good-value")).get().content.firstOrNull()
         assertNotNull(viaMeta)
+
+        val viaLedgerAccountId = client.getLedgerTransactions(ledgerAccountId = usd_cash.id).get().content.find { it.id == inUsd.id }
+        assertNotNull(viaLedgerAccountId)
+
+        val viaBadLedgerAccountId = client.getLedgerTransactions(ledgerAccountId = LedgerAccountId(UUID.randomUUID())).get().content.find { it.id == inUsd.id }
+        assertNull(viaBadLedgerAccountId)
     }
 
     @Test
