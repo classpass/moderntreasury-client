@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.containsOnly
 import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import com.classpass.moderntreasury.client.ModernTreasuryClient
 import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
@@ -76,6 +77,15 @@ class ModernTreasuryFakeTest {
         client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED, effectiveDate = TOMORROW)
         val balance4 = client.getLedgerAccount(us_venue.id, TODAY).get().balances.postedBalance.amount
         assertEquals(0, balance4 - balance3)
+    }
+
+    @Test
+    fun `getLedgerAccoutns paginates correctly`() {
+        val page = client.getLedgerAccounts(listOf(us_venue.id, can_cash.id, usd_cogs.id), null, page = 1, perPage = 2).get()
+        assertThat(page.content).isEqualTo(listOf(us_venue, can_cash))
+        assertThat(page.page).isEqualTo(1)
+        assertThat(page.perPage).isEqualTo(2)
+        assertThat(page.totalCount).isEqualTo(3)
     }
 
     @Test

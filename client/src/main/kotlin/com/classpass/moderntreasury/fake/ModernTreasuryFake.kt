@@ -147,7 +147,7 @@ open class ModernTreasuryFake :
         page: Int,
         perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
-        val content = transactions
+        val filteredTransactions = transactions
             .filter { ledgerId == null || it.ledgerId == ledgerId }
             .filter { metadata.isEmpty() || metadata matches it.metadata }
             .filter { effectiveDate?.test(it.effectiveDate) ?: true }
@@ -163,10 +163,11 @@ open class ModernTreasuryFake :
         val modernTreasuryPageInfo = object : ModernTreasuryPageInfo {
             override val page = page
             override val perPage = perPage
-            override val totalCount = content.size
+            override val totalCount = filteredTransactions.size
         }
+        val pageContent = filteredTransactions.drop((page - 1) * perPage).take(perPage)
         // updatedAt not currently implemented in client
-        return completedFuture(ModernTreasuryPage(modernTreasuryPageInfo, content.drop(page * perPage).take(perPage)))
+        return completedFuture(ModernTreasuryPage(modernTreasuryPageInfo, pageContent))
     }
 
     override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
