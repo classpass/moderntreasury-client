@@ -111,7 +111,9 @@ internal class AsyncModernTreasuryClient(
         metadata: Map<String, String>,
         effectiveDate: DateQuery?,
         postedAt: DateTimeQuery?,
-        updatedAt: DateTimeQuery?
+        updatedAt: DateTimeQuery?,
+        page: Int,
+        perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val queryParams = mapOf(
             "ledger_id" to listOfNotNull(ledgerId?.toString()),

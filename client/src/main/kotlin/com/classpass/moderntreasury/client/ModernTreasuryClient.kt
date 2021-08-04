@@ -80,7 +80,9 @@ interface ModernTreasuryClient : Closeable {
         metadata: Map<String, String> = emptyMap(),
         effectiveDate: DateQuery? = null,
         postedAt: DateTimeQuery? = null,
-        updatedAt: DateTimeQuery? = null
+        updatedAt: DateTimeQuery? = null,
+        page: Int = 1,
+        perPage: Int = 25
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>>
 
     fun createLedgerTransaction(
