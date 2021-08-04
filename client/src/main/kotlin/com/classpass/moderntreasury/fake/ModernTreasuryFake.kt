@@ -94,7 +94,7 @@ open class ModernTreasuryFake :
             override val perPage = perPage
             override val totalCount = accounts.size
         }
-        val content = accounts.drop(page * perPage).take(perPage)
+        val content = accounts.drop((page - 1) * perPage).take(perPage)
         ModernTreasuryPage(modernTreasuryPageInfo, content)
     }
 
