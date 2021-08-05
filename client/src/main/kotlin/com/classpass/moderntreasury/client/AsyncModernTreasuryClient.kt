@@ -57,6 +57,7 @@ internal class AsyncModernTreasuryClient(
                 .setConnectTimeout(config.connectTimeoutMs)
                 .setReadTimeout(config.readTimeoutMs)
                 .setRequestTimeout(config.requestTimeoutMs)
+                .setHttpClientCodecMaxHeaderSize(config.httpClientCodecMaxHeaderSize)
                 .build()
             val asyncHttpClient = Dsl.asyncHttpClient(clientConfig)
             val rateLimiter = RateLimiter.create(config.rateLimit)

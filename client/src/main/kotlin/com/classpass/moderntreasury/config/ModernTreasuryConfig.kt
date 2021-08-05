@@ -7,6 +7,7 @@ class ModernTreasuryConfig(
     val connectTimeoutMs: Int = DEFAULT_CONNECT_TIMEOUT,
     val readTimeoutMs: Int = DEFAULT_READ_TIMEOUT,
     val requestTimeoutMs: Int = DEFAULT_REQUEST_TIMEOUT,
+    val httpClientCodecMaxHeaderSize: Int = DEFAULT_HTTP_CLIENT_CODEC_MAX_HEADER_SIZE,
     /**
      * Sets a limit on how long to wait for the rate limiter before submitting a request. If a request cannot pass the
      * rate limiter before rateLimitTimeoutMs will occur, the request will fail with a RateLimitTimeoutException. This
@@ -26,3 +27,4 @@ private const val DEFAULT_CONNECT_TIMEOUT = 1_000
 private const val DEFAULT_READ_TIMEOUT = 3_000
 private const val DEFAULT_REQUEST_TIMEOUT = 3_000
 private const val DEFAULT_RATE_LIMIT_TIMEOUT = 10_000L
+private const val DEFAULT_HTTP_CLIENT_CODEC_MAX_HEADER_SIZE = 16384
