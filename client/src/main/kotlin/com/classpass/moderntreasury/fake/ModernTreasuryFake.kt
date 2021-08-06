@@ -170,7 +170,12 @@ open class ModernTreasuryFake :
         return completedFuture(ModernTreasuryPage(modernTreasuryPageInfo, pageContent))
     }
 
-    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> =
+    override fun createLedgerTransaction(request: CreateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> = createLedgerTransaction(request, null)
+
+    /**
+     * ModernTreasuryFake only: create a ledger transaction with the option to override it postedAt timestamp
+     */
+    fun createLedgerTransaction(request: CreateLedgerTransactionRequest, postedAtOverride: ZonedDateTime?) =
         supplyAsync {
             // Support idempotent requests.
             if (request.idempotencyKey.length > 0) {
@@ -188,7 +193,7 @@ open class ModernTreasuryFake :
             val metadata = request.metadata.filterNonNullValues()
             val status = request.status ?: LedgerTransactionStatus.PENDING
             val nowLocalTZ = ZonedDateTime.now()
-            val postedAt = if (status != LedgerTransactionStatus.PENDING) nowLocalTZ else null
+            val postedAt = if (status != LedgerTransactionStatus.PENDING) postedAtOverride ?: nowLocalTZ else null
 
             // Use first entry to find the ledger.
             val ledgerAccountId1 = request.ledgerEntries.first().ledgerAccountId
