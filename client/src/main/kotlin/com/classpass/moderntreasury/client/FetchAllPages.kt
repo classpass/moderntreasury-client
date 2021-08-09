@@ -4,6 +4,9 @@ import com.classpass.moderntreasury.model.ModernTreasuryPage
 import java.util.concurrent.CompletableFuture
 import kotlin.math.ceil
 
+/**
+ * This is the largest page size the ModernTreasury API will allow
+ */
 private const val PER_PAGE_MAX = 100
 
 /**
