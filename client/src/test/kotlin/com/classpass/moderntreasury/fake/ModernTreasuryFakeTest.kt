@@ -4,7 +4,9 @@ import assertk.assertThat
 import assertk.assertions.containsAll
 import assertk.assertions.containsOnly
 import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import com.classpass.moderntreasury.client.ModernTreasuryClient
+import com.classpass.moderntreasury.client.fetchAllPages
 import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictException
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountId
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.Clock
@@ -42,6 +45,11 @@ class ModernTreasuryFakeTest {
     val usd_cash = client.createLedgerAccount("Cash", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
     val usd_cogs = client.createLedgerAccount("COGS", "", NormalBalanceType.DEBIT, usd.id, NIK).get()
     val us_venue = client.createLedgerAccount("US Venue", "", NormalBalanceType.CREDIT, usd.id, NIK).get()
+
+    @BeforeEach
+    fun setup() {
+        client.clearAllTestTransactions()
+    }
 
     @Test
     fun `Can create transactions and get balances`() {
@@ -76,6 +84,16 @@ class ModernTreasuryFakeTest {
         client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED, effectiveDate = TOMORROW)
         val balance4 = client.getLedgerAccount(us_venue.id, TODAY).get().balances.postedBalance.amount
         assertEquals(0, balance4 - balance3)
+    }
+
+    @Test
+    fun `getLedgerAccoutns paginates correctly`() {
+        // We're overriding perPage here to 2 so that we don't have to generate hundreds of rows of fake data to query for this test
+        val page = client.getLedgerAccounts(listOf(us_venue.id, can_cash.id, usd_cogs.id), null, page = 1, perPage = 2).get()
+        assertThat(page.content).isEqualTo(listOf(us_venue, can_cash))
+        assertThat(page.page).isEqualTo(1)
+        assertThat(page.perPage).isEqualTo(2)
+        assertThat(page.totalCount).isEqualTo(3)
     }
 
     @Test
@@ -251,6 +269,50 @@ class ModernTreasuryFakeTest {
         assertEquals(tx1.id, tx2.id)
         val owe = client.getLedgerAccount(us_venue.id).get().balances.pendingBalance.amount
         assert(100L == owe)
+    }
+
+    @Test
+    fun `fetchAllPages fetches all pages`() {
+        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
+        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, usd_cogs.id)
+
+        val transactions = List(500) {
+            client.createLedgerTransaction(
+                TODAY,
+                listOf(debit, credit),
+                "",
+                "",
+                LedgerTransactionStatus.PENDING,
+                "",
+            ).get()
+        }
+
+        val result = client.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerAccountId = usd_cash.id, page = page, perPage = perPage) }.get()
+        assertThat(result).isEqualTo(transactions)
+    }
+
+    @Test
+    fun `fetchAllPages works on single-page result set`() {
+        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
+        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, usd_cogs.id)
+
+        val transaction = client.createLedgerTransaction(
+            TODAY,
+            listOf(debit, credit),
+            "",
+            "",
+            LedgerTransactionStatus.PENDING,
+            "",
+        ).get()
+
+        val result = client.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerAccountId = usd_cash.id, page = page, perPage = perPage) }.get()
+        assertThat(result).isEqualTo(listOf(transaction))
+    }
+
+    @Test
+    fun `fetchAllPages works on empty result set`() {
+        val result = client.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerAccountId = usd_cash.id, page = page, perPage = perPage) }.get()
+        assertThat(result).isEqualTo(emptyList())
     }
 
     @Nested
