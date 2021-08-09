@@ -88,6 +88,7 @@ class ModernTreasuryFakeTest {
 
     @Test
     fun `getLedgerAccoutns paginates correctly`() {
+        // We're overriding perPage here to 2 so that we don't have to generate hundreds of rows of fake data to query for this test
         val page = client.getLedgerAccounts(listOf(us_venue.id, can_cash.id, usd_cogs.id), null, page = 1, perPage = 2).get()
         assertThat(page.content).isEqualTo(listOf(us_venue, can_cash))
         assertThat(page.page).isEqualTo(1)
