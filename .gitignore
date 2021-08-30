@@ -1,8 +1,8 @@
-.DS_Store
 *.iml
-.idea/*
-out/
-
+*WIP*
+.DS_Store
 .gradle
+.idea/
 build/
 live-tests.properties
+out/
