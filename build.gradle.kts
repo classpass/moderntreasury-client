@@ -28,14 +28,12 @@ subprojects {
 
     val deps by extra {
         mapOf(
-            "jade" to "4.5.2",
             "jackson" to "2.12.2",
             "junit" to "5.7.1"
         )
     }
 
     dependencies {
-        testImplementation("com.classpass.jade", "test-support", deps["jade"])
         testImplementation("org.junit.jupiter:junit-jupiter-api:${deps["junit"]}")
         testImplementation("org.junit.jupiter:junit-jupiter-params:${deps["junit"]}")
         testImplementation("org.junit.jupiter:junit-jupiter-engine:${deps["junit"]}")

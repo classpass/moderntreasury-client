@@ -5,8 +5,6 @@ plugins {
 
 dependencies {
     implementation("org.asynchttpclient:async-http-client:2.12.3")
-    api("com.classpass.jade", "async-http-client-tools", deps["jade"])
-    implementation("com.classpass.jade", "util", deps["jade"])
 
     implementation("com.fasterxml.jackson.core", "jackson-databind", deps["jackson"])
     implementation("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310", deps["jackson"])
