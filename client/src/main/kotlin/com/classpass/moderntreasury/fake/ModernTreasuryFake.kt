@@ -259,11 +259,20 @@ open class ModernTreasuryFake :
         transactions.add(transaction)
     }
 
+    /**
+     * From https://docs.moderntreasury.com/reference#update-ledger-transaction
+     * "...For posted ledger transactions, only the metadata attribute can be updated."
+     * Accordingly, identifying requests which are only changes to metadata is of interest.
+     */
+    private fun UpdateLedgerTransactionRequest.metadataOnly(): Boolean {
+        return description == null && ledgerEntries == null && metadata.isNotEmpty()
+    }
+
     override fun updateLedgerTransaction(request: UpdateLedgerTransactionRequest): CompletableFuture<LedgerTransaction> = supplyAsync {
         val transaction = transactions.find { it.id == request.id }
             ?: throwApiException("Not Found")
 
-        if (transaction.status != LedgerTransactionStatus.PENDING) {
+        if (transaction.status != LedgerTransactionStatus.PENDING && !request.metadataOnly()) {
             // Trying to update to POSTED/ARCHIVED when already POSTED/ARCHIVED
             if (request.status != LedgerTransactionStatus.PENDING) {
                 throwTransactionAlreadyPostedException()
