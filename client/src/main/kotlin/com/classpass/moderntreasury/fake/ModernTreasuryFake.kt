@@ -314,13 +314,9 @@ private fun makeId() = UUID.randomUUID()
 fun Map<String, String>.updatedWith(
     requestMetadata: RequestMetadata
 ): Map<String, String> {
-    // Remove entries which are specifically set to null or empty string in the request.
-    return this.filterNot { requestMetadata.containsKey(it.key) && (requestMetadata[it.key] == null || requestMetadata[it.key] == "") }
-        // Override previous values with values from the request.
-        .mapValues { (k, _) -> requestMetadata[k] ?: this[k]!! } +
-        // Include any entries from the request for new keys.
-        requestMetadata.filterKeys { !this.containsKey(it) }
-            .filterNonNullValues()
+    // Overrides any previous values with values from the request. Removes any keys that have been set to null or empty
+    // string.
+    return (this + requestMetadata).filter { !it.value.isNullOrEmpty() }.filterNonNullValues()
 }
 
 private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId, balances: LedgerAccountBalances) =
