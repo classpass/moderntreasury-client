@@ -286,11 +286,7 @@ open class ModernTreasuryFake :
             ?.map { it.reify(LedgerEntryId(makeId())) }
             ?.also { it.validate() }
 
-        val metadata = transaction.metadata
-            // Remove entries which are specifically set to null in the request.
-            .filterNot { request.metadata.containsKey(it.key) && request.metadata[it.key] == null }
-            // Override previous values with values from the request.
-            .mapValues { (k, _) -> request.metadata[k] ?: transaction.metadata[k]!! }
+        val metadata = transaction.metadata.updatedWith(request.metadata)
 
         val updated = transaction.copy(
             description = request.description ?: transaction.description,
@@ -314,6 +310,14 @@ open class ModernTreasuryFake :
 private const val LIVEMODE = false
 
 private fun makeId() = UUID.randomUUID()
+
+fun Map<String, String>.updatedWith(
+    requestMetadata: RequestMetadata
+): Map<String, String> {
+    // Overrides any previous values with values from the request. Removes any keys that have been set to null or empty
+    // string.
+    return (this + requestMetadata).filter { !it.value.isNullOrEmpty() }.filterNonNullValues()
+}
 
 private fun CreateLedgerAccountRequest.reify(ledgerAccountId: LedgerAccountId, ledgerId: LedgerId, balances: LedgerAccountBalances) =
     LedgerAccount(ledgerAccountId, this.name, this.description, this.normalBalance, balances, ledgerId, lockVersion = 0, this.metadata.filterNonNullValues(), LIVEMODE)

@@ -330,6 +330,32 @@ class ModernTreasuryFakeTest {
             assertEquals(100L, balance)
         }
     }
+
+    @Nested
+    inner class MetadataUpdating {
+        @Test
+        fun `setting key to null value clears metadata`() {
+            assertNull(mapOf("my_key" to "my_value").updatedWith(mapOf("my_key" to null))["my_key"])
+        }
+
+        @Test
+        fun `setting key to empty string value clears metadata`() {
+            assertNull(mapOf("my_key" to "my_value").updatedWith(mapOf("my_key" to ""))["my_key"])
+        }
+
+        @Test
+        fun `replaces old value when new value is specified for key`() {
+            assertEquals(
+                "new_value",
+                mapOf("my_key" to "old_value").updatedWith(mapOf("my_key" to "new_value"))["my_key"]
+            )
+        }
+
+        @Test
+        fun `values for new keys are included in updated metadata`() {
+            assertEquals("my_value", emptyMap<String, String>().updatedWith(mapOf("my_key" to "my_value"))["my_key"])
+        }
+    }
 }
 
 var nextId = 1L
