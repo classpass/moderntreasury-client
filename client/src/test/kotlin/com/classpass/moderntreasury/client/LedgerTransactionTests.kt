@@ -43,7 +43,7 @@ class LedgerTransactionTests : WireMockClientTest() {
             description = "test 3 pending",
             status = LedgerTransactionStatus.PENDING,
             metadata = emptyMap(),
-            ledgerEntries = listOf(
+            ledgerEntries = setOf(
                 LedgerEntry(
                     id = ledgerEntryId,
                     liveMode = false,

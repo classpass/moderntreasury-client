@@ -215,7 +215,7 @@ open class ModernTreasuryFake :
                 description = request.description,
                 status = status,
                 metadata = metadata,
-                ledgerEntries = ledgerEntries,
+                ledgerEntries = ledgerEntries.toSet(),
                 postedAt = postedAt,
                 effectiveDate = request.effectiveDate,
                 ledgerId = ledgerAccount1.ledgerId,
@@ -291,7 +291,7 @@ open class ModernTreasuryFake :
         val updated = transaction.copy(
             description = request.description ?: transaction.description,
             status = request.status ?: transaction.status,
-            ledgerEntries = ledgerEntries ?: transaction.ledgerEntries,
+            ledgerEntries = ledgerEntries?.toSet() ?: transaction.ledgerEntries,
             metadata = metadata
         )
 
