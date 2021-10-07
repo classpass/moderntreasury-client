@@ -30,7 +30,7 @@ data class LedgerTransaction(
      * https://docs.moderntreasury.com/reference#metadata.
      */
     val metadata: Map<String, String>,
-    val ledgerEntries: List<LedgerEntry>,
+    val ledgerEntries: Set<LedgerEntry>,
     /**
      * The time on which the ledger transaction posted. This is null if the ledger transaction is pending.
      */

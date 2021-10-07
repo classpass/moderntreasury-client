@@ -55,7 +55,13 @@ class FetchAllPagesLiveTest : ModernTreasuryLiveTest() {
             )
         }.map { it.get() }
 
-        val actual = client.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerAccountId = ledgerAccount.id, page = page, perPage = 1) }.get()
+        val actual = client.fetchAllPages({ page, perPage ->
+            getLedgerTransactions(
+                ledgerAccountId = ledgerAccount.id,
+                page = page,
+                perPage = 1
+            )
+        }).get()
         assertThat(actual).containsOnly(*transactions.toTypedArray())
     }
 }

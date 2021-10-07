@@ -287,7 +287,13 @@ class ModernTreasuryFakeTest {
             ).get()
         }
 
-        val result = client.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerAccountId = usd_cash.id, page = page, perPage = perPage) }.get()
+        val result = client.fetchAllPages({ page, perPage ->
+            getLedgerTransactions(
+                ledgerAccountId = usd_cash.id,
+                page = page,
+                perPage = perPage
+            )
+        }).get()
         assertThat(result).isEqualTo(transactions)
     }
 
@@ -305,13 +311,25 @@ class ModernTreasuryFakeTest {
             "",
         ).get()
 
-        val result = client.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerAccountId = usd_cash.id, page = page, perPage = perPage) }.get()
+        val result = client.fetchAllPages({ page, perPage ->
+            getLedgerTransactions(
+                ledgerAccountId = usd_cash.id,
+                page = page,
+                perPage = perPage
+            )
+        }).get()
         assertThat(result).isEqualTo(listOf(transaction))
     }
 
     @Test
     fun `fetchAllPages works on empty result set`() {
-        val result = client.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerAccountId = usd_cash.id, page = page, perPage = perPage) }.get()
+        val result = client.fetchAllPages({ page, perPage ->
+            getLedgerTransactions(
+                ledgerAccountId = usd_cash.id,
+                page = page,
+                perPage = perPage
+            )
+        }).get()
         assertThat(result).isEqualTo(emptyList())
     }
 

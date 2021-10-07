@@ -17,12 +17,13 @@ private const val PER_PAGE_MAX = 100
  * mtClient.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerId, null, page = page, perPage = perPage) }
  */
 fun <T> ModernTreasuryClient.fetchAllPages(
-    fetchPage: ModernTreasuryClient.(page: Int, perPage: Int) -> CompletableFuture<ModernTreasuryPage<T>>
+    fetchPage: ModernTreasuryClient.(paginatedFnPage: Int, paginatedFnPerPage: Int) -> CompletableFuture<ModernTreasuryPage<T>>,
+    perPage: Int = PER_PAGE_MAX
 ): CompletableFuture<List<T>> =
-    fetchPage(1, PER_PAGE_MAX).thenApply { pageOne ->
+    fetchPage(1, perPage).thenApply { pageOne ->
         val totalPages = ceil(pageOne.totalCount / pageOne.perPage.toDouble()).toInt()
         val remainingPages = (2..totalPages).map { pageNumber ->
-            fetchPage(pageNumber, PER_PAGE_MAX)
+            fetchPage(pageNumber, perPage)
         }
         val pageFutures = listOf(CompletableFuture.completedFuture(pageOne)).plus(remainingPages)
         pageFutures.flatMap { it.join().content }
