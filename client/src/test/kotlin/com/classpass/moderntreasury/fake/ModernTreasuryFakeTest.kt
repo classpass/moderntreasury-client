@@ -14,7 +14,7 @@ import com.classpass.moderntreasury.model.LedgerEntryDirection
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.DateQuery
-import com.classpass.moderntreasury.model.request.DateTimeQuery
+import com.classpass.moderntreasury.model.request.InstantQuery
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -25,8 +25,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
-import java.time.ZonedDateTime
 import java.util.UUID
 import java.util.concurrent.ExecutionException
 
@@ -178,10 +179,11 @@ class ModernTreasuryFakeTest {
         val viaEffectiveDateMiss = client.getLedgerTransactions(effectiveDate = DateQuery().lessThan(TODAY)).get().content.map { it.id }
         assertThat(viaEffectiveDateMiss).isEmpty()
 
-        val viaPostedAtHit = client.getLedgerTransactions(postedAt = DateTimeQuery().lessThanOrEqualTo(ZonedDateTime.now(CLOCK))).get().content.map { it.id }
+        val viaPostedAtHit = client.getLedgerTransactions(postedAt = InstantQuery().lessThanOrEqualTo(Instant.now(CLOCK))).get().content.map { it.id }
         assertThat(viaPostedAtHit).containsOnly(posted.id)
 
-        val viaPostedAtMiss = client.getLedgerTransactions(postedAt = DateTimeQuery().equalTo(ZonedDateTime.now(CLOCK).plusMinutes(1))).get().content.map { it.id }
+        val viaPostedAtMiss = client.getLedgerTransactions(postedAt = InstantQuery().equalTo(Instant.now(CLOCK).plus(
+            Duration.ofMinutes(1)))).get().content.map { it.id }
         assertThat(viaPostedAtMiss).isEmpty()
     }
 

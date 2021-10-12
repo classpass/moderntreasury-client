@@ -3,8 +3,8 @@ package com.classpass.moderntreasury.model
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonValue
+import java.time.Instant
 import java.time.LocalDate
-import java.time.ZonedDateTime
 import java.util.UUID
 
 /**
@@ -34,7 +34,7 @@ data class LedgerTransaction(
     /**
      * The time on which the ledger transaction posted. This is null if the ledger transaction is pending.
      */
-    val postedAt: ZonedDateTime?,
+    val postedAt: Instant?,
     /**
      * The date on which the ledger transaction happened for reporting purposes.
      */

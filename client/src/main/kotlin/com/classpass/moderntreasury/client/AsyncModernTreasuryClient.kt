@@ -16,8 +16,8 @@ import com.classpass.moderntreasury.model.request.CreateLedgerAccountRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.DateQuery
-import com.classpass.moderntreasury.model.request.DateTimeQuery
 import com.classpass.moderntreasury.model.request.IdempotentRequest
+import com.classpass.moderntreasury.model.request.InstantQuery
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.toQueryParams
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -111,8 +111,8 @@ internal class AsyncModernTreasuryClient(
         ledgerAccountId: LedgerAccountId?,
         metadata: Map<String, String>,
         effectiveDate: DateQuery?,
-        postedAt: DateTimeQuery?,
-        updatedAt: DateTimeQuery?,
+        postedAt: InstantQuery?,
+        updatedAt: InstantQuery?,
         page: Int,
         perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {

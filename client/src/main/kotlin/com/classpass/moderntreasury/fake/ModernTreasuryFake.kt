@@ -20,14 +20,14 @@ import com.classpass.moderntreasury.model.request.CreateLedgerRequest
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.DatePreposition
 import com.classpass.moderntreasury.model.request.DateQuery
-import com.classpass.moderntreasury.model.request.DateTimeQuery
+import com.classpass.moderntreasury.model.request.InstantQuery
 import com.classpass.moderntreasury.model.request.ModernTreasuryTemporalQuery
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.RequestMetadata
 import com.classpass.moderntreasury.model.request.TemporalQueryPart
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
+import java.time.Instant
 import java.time.LocalDate
-import java.time.ZonedDateTime
 import java.time.temporal.ChronoField
 import java.time.temporal.Temporal
 import java.util.UUID
@@ -142,8 +142,8 @@ open class ModernTreasuryFake :
         ledgerAccountId: LedgerAccountId?,
         metadata: Map<String, String>,
         effectiveDate: DateQuery?,
-        postedAt: DateTimeQuery?,
-        updatedAt: DateTimeQuery?,
+        postedAt: InstantQuery?,
+        updatedAt: InstantQuery?,
         page: Int,
         perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
@@ -175,7 +175,7 @@ open class ModernTreasuryFake :
     /**
      * ModernTreasuryFake only: create a ledger transaction with the option to override it postedAt timestamp
      */
-    fun createLedgerTransaction(request: CreateLedgerTransactionRequest, postedAtOverride: ZonedDateTime?) =
+    fun createLedgerTransaction(request: CreateLedgerTransactionRequest, postedAtOverride: Instant?) =
         supplyAsync {
             // Support idempotent requests.
             if (request.idempotencyKey.length > 0) {
@@ -192,7 +192,7 @@ open class ModernTreasuryFake :
 
             val metadata = request.metadata.filterNonNullValues()
             val status = request.status ?: LedgerTransactionStatus.PENDING
-            val nowLocalTZ = ZonedDateTime.now()
+            val nowLocalTZ = Instant.now()
             val postedAt = if (status != LedgerTransactionStatus.PENDING) postedAtOverride ?: nowLocalTZ else null
 
             // Use first entry to find the ledger.
@@ -349,7 +349,7 @@ private fun <T : Temporal> ModernTreasuryTemporalQuery<T>.test(targetTemporal: T
 private fun <T : Temporal> TemporalQueryPart<T>.test(targetTemporal: T): Boolean {
     val chronoField = when (targetTemporal) {
         is LocalDate -> ChronoField.EPOCH_DAY
-        is ZonedDateTime -> ChronoField.INSTANT_SECONDS
+        is Instant -> ChronoField.INSTANT_SECONDS
         else -> throw IllegalStateException()
     }
     val targetEpoch = targetTemporal.getLong(chronoField)
