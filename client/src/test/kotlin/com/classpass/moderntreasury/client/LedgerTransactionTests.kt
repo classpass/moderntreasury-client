@@ -12,7 +12,7 @@ import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.request.CreateLedgerTransactionRequest
 import com.classpass.moderntreasury.model.request.DateQuery
-import com.classpass.moderntreasury.model.request.DateTimeQuery
+import com.classpass.moderntreasury.model.request.InstantQuery
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
 import com.classpass.moderntreasury.model.request.UpdateLedgerTransactionRequest
 import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
@@ -26,7 +26,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -53,7 +53,7 @@ class LedgerTransactionTests : WireMockClientTest() {
                     lockVersion = null
                 ),
             ),
-            postedAt = ZonedDateTime.of(2020, 10, 20, 19, 11, 7, 0, ZoneId.of("UTC")),
+            postedAt = ZonedDateTime.of(2020, 10, 20, 19, 11, 7, 0, ZoneOffset.UTC).toInstant(),
             effectiveDate = LocalDate.of(2021, 5, 4),
             ledgerId = ledgerId,
             ledgerableType = null,
@@ -261,24 +261,24 @@ class LedgerTransactionTests : WireMockClientTest() {
     @Test
     fun `getLedgerTransactions updatedAt and postedAt query param serialization`() {
         // We're just testing serialization so its fine that this combination of date ranges is impossible
-        val dateTimeQuery = DateTimeQuery().greaterThan(ZonedDateTime.of(1987, 5, 13, 0, 0, 0, 0, ZoneId.of("Z")))
-            .greaterThanOrEqualTo(ZonedDateTime.of(1986, 10, 7, 0, 0, 0, 0, ZoneId.of("Z")))
-            .lessThan(ZonedDateTime.of(2021, 7, 28, 0, 0, 0, 0, ZoneId.of("Z")))
-            .lessThanOrEqualTo(ZonedDateTime.of(1997, 8, 29, 0, 0, 0, 0, ZoneId.of("Z")))
-            .equalTo(ZonedDateTime.of(2019, 3, 25, 0, 0, 0, 0, ZoneId.of("Z")))
+        val instantQuery = InstantQuery().greaterThan(ZonedDateTime.of(1987, 5, 13, 0, 0, 0, 0, ZoneOffset.UTC).toInstant())
+            .greaterThanOrEqualTo(ZonedDateTime.of(1986, 10, 7, 0, 0, 0, 0, ZoneOffset.UTC).toInstant())
+            .lessThan(ZonedDateTime.of(2021, 7, 28, 0, 0, 0, 0, ZoneOffset.UTC).toInstant())
+            .lessThanOrEqualTo(ZonedDateTime.of(1997, 8, 29, 0, 0, 0, 0, ZoneOffset.UTC).toInstant())
+            .equalTo(ZonedDateTime.of(2019, 3, 25, 0, 0, 0, 0, ZoneOffset.UTC).toInstant())
 
         stubFor(
             get(anyUrl())
-                .withQueryParam("updated_at%5Bgt%5D", equalTo("1987-05-13T00:00Z"))
-                .withQueryParam("updated_at%5Bgte%5D", equalTo("1986-10-07T00:00Z"))
-                .withQueryParam("updated_at%5Blt%5D", equalTo("2021-07-28T00:00Z"))
-                .withQueryParam("updated_at%5Blte%5D", equalTo("1997-08-29T00:00Z"))
-                .withQueryParam("updated_at%5Beq%5D", equalTo("2019-03-25T00:00Z"))
-                .withQueryParam("posted_at%5Bgt%5D", equalTo("1987-05-13T00:00Z"))
-                .withQueryParam("posted_at%5Bgte%5D", equalTo("1986-10-07T00:00Z"))
-                .withQueryParam("posted_at%5Blt%5D", equalTo("2021-07-28T00:00Z"))
-                .withQueryParam("posted_at%5Blte%5D", equalTo("1997-08-29T00:00Z"))
-                .withQueryParam("posted_at%5Beq%5D", equalTo("2019-03-25T00:00Z"))
+                .withQueryParam("updated_at%5Bgt%5D", equalTo("1987-05-13T00:00:00Z"))
+                .withQueryParam("updated_at%5Bgte%5D", equalTo("1986-10-07T00:00:00Z"))
+                .withQueryParam("updated_at%5Blt%5D", equalTo("2021-07-28T00:00:00Z"))
+                .withQueryParam("updated_at%5Blte%5D", equalTo("1997-08-29T00:00:00Z"))
+                .withQueryParam("updated_at%5Beq%5D", equalTo("2019-03-25T00:00:00Z"))
+                .withQueryParam("posted_at%5Bgt%5D", equalTo("1987-05-13T00:00:00Z"))
+                .withQueryParam("posted_at%5Bgte%5D", equalTo("1986-10-07T00:00:00Z"))
+                .withQueryParam("posted_at%5Blt%5D", equalTo("2021-07-28T00:00:00Z"))
+                .withQueryParam("posted_at%5Blte%5D", equalTo("1997-08-29T00:00:00Z"))
+                .withQueryParam("posted_at%5Beq%5D", equalTo("2019-03-25T00:00:00Z"))
                 .willReturn(
                     ledgerTransactionsListResponse(
                         UUID.randomUUID(),
@@ -292,6 +292,6 @@ class LedgerTransactionTests : WireMockClientTest() {
                 )
         )
 
-        assertDoesNotThrow { client.getLedgerTransactions(null, updatedAt = dateTimeQuery, postedAt = dateTimeQuery).get() }
+        assertDoesNotThrow { client.getLedgerTransactions(null, updatedAt = instantQuery, postedAt = instantQuery).get() }
     }
 }

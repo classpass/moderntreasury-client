@@ -1,7 +1,7 @@
 package com.classpass.moderntreasury.model.request
 
+import java.time.Instant
 import java.time.LocalDate
-import java.time.ZonedDateTime
 import java.time.temporal.Temporal
 
 /**
@@ -28,26 +28,26 @@ class DateQuery internal constructor(queryParts: List<TemporalQueryPart<LocalDat
 }
 
 /**
- * A class for constructing datetime-related query parameters for modern treasury queries. Usage example:
- * DateTimeQuery().lessThan(endTime).greaterThanOrEqualTo(startTime)
+ * A class for constructing timestamp-related query parameters for modern treasury queries. Usage example:
+ * InstantQuery().lessThan(endTime).greaterThanOrEqualTo(startTime)
  * or
- * DateTimeQuery().equalTo(timestamp)
+ * InstantQuery().equalTo(timestamp)
  */
-class DateTimeQuery internal constructor(queryParts: List<TemporalQueryPart<ZonedDateTime>>) :
-    ModernTreasuryTemporalQuery<ZonedDateTime>(queryParts) {
+class InstantQuery internal constructor(queryParts: List<TemporalQueryPart<Instant>>) :
+    ModernTreasuryTemporalQuery<Instant>(queryParts) {
     /**
      * Create an empty DateTimeQuery
      */
     constructor() : this(emptyList())
 
-    override fun plus(preposition: DatePreposition, temporal: ZonedDateTime): DateTimeQuery =
-        DateTimeQuery(this.queryParts.plus(TemporalQueryPart(preposition, temporal)))
+    override fun plus(preposition: DatePreposition, temporal: Instant): InstantQuery =
+        InstantQuery(this.queryParts.plus(TemporalQueryPart(preposition, temporal)))
 
-    override fun lessThan(temporal: ZonedDateTime) = super.lessThan(temporal) as DateTimeQuery
-    override fun lessThanOrEqualTo(temporal: ZonedDateTime) = super.lessThanOrEqualTo(temporal) as DateTimeQuery
-    override fun greaterThan(temporal: ZonedDateTime) = super.greaterThan(temporal) as DateTimeQuery
-    override fun greaterThanOrEqualTo(temporal: ZonedDateTime) = super.greaterThanOrEqualTo(temporal) as DateTimeQuery
-    override fun equalTo(temporal: ZonedDateTime) = super.equalTo(temporal) as DateTimeQuery
+    override fun lessThan(temporal: Instant) = super.lessThan(temporal) as InstantQuery
+    override fun lessThanOrEqualTo(temporal: Instant) = super.lessThanOrEqualTo(temporal) as InstantQuery
+    override fun greaterThan(temporal: Instant) = super.greaterThan(temporal) as InstantQuery
+    override fun greaterThanOrEqualTo(temporal: Instant) = super.greaterThanOrEqualTo(temporal) as InstantQuery
+    override fun equalTo(temporal: Instant) = super.equalTo(temporal) as InstantQuery
 }
 
 sealed class ModernTreasuryTemporalQuery<T : Temporal> constructor(
