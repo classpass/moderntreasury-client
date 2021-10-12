@@ -182,8 +182,13 @@ class ModernTreasuryFakeTest {
         val viaPostedAtHit = client.getLedgerTransactions(postedAt = InstantQuery().lessThanOrEqualTo(Instant.now(CLOCK))).get().content.map { it.id }
         assertThat(viaPostedAtHit).containsOnly(posted.id)
 
-        val viaPostedAtMiss = client.getLedgerTransactions(postedAt = InstantQuery().equalTo(Instant.now(CLOCK).plus(
-            Duration.ofMinutes(1)))).get().content.map { it.id }
+        val viaPostedAtMiss = client.getLedgerTransactions(
+            postedAt = InstantQuery().equalTo(
+                Instant.now(CLOCK).plus(
+                    Duration.ofMinutes(1)
+                )
+            )
+        ).get().content.map { it.id }
         assertThat(viaPostedAtMiss).isEmpty()
     }
 

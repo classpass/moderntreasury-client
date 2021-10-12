@@ -29,9 +29,9 @@ class DateQuery internal constructor(queryParts: List<TemporalQueryPart<LocalDat
 
 /**
  * A class for constructing timestamp-related query parameters for modern treasury queries. Usage example:
- * Instant().lessThan(endTime).greaterThanOrEqualTo(startTime)
+ * InstantQuery().lessThan(endTime).greaterThanOrEqualTo(startTime)
  * or
- * Instant().equalTo(timestamp)
+ * InstantQuery().equalTo(timestamp)
  */
 class InstantQuery internal constructor(queryParts: List<TemporalQueryPart<Instant>>) :
     ModernTreasuryTemporalQuery<Instant>(queryParts) {
