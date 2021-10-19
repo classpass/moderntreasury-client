@@ -23,7 +23,9 @@ configure<PublishingExtension> {
     findProperty("com.classpass.jenkins.localRepo")?.toString()?.let { localRepoPath ->
         publications {
             create<MavenPublication>("mavenJava") {
-                artifactId = "client"
+                // Give the resulting artifact a name that won't conflict with other projects
+                artifactId = "${project.group.toString().split(".").last()}-${project.name}"
+
                 from(components["java"])
             }
         }
