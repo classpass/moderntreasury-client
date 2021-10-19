@@ -24,7 +24,7 @@ configure<PublishingExtension> {
         publications {
             create<MavenPublication>("mavenJava") {
                 // Give the resulting artifact a name that won't conflict with other projects
-                artifactId = "${project.group.toString().split(".").last()}-${project.name}"
+                artifactId = "modern-treasury-client"
 
                 from(components["java"])
             }
