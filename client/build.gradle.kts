@@ -23,7 +23,9 @@ configure<PublishingExtension> {
     findProperty("com.classpass.jenkins.localRepo")?.toString()?.let { localRepoPath ->
         publications {
             create<MavenPublication>("mavenJava") {
-                artifactId = "client"
+                // Give the resulting artifact a name that won't conflict with other projects
+                artifactId = "modern-treasury-client"
+
                 from(components["java"])
             }
         }
