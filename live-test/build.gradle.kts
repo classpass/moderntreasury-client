@@ -1,10 +1,8 @@
 group = "com.classpass.moderntreasury"
 
-tasks {
-    test {
-        onlyIf {
-            project.hasProperty("liveTests")
-        }
+tasks.withType<Test> {
+    onlyIf {
+        project.hasProperty("liveTests")
     }
 }
 

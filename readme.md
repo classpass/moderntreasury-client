@@ -1,27 +1,30 @@
-# Modern Treasury Client
+# Overview
 
-This is a JVM client for the [Modern Treasury API](https://docs.moderntreasury.com/reference)  
-[Link to technical design doc](https://docs.google.com/document/d/1jRiC7TdkA88_Wto7dya_EP4Ok6S7McJbvGh6JYIRB6g/edit#)
+This is a JVM client for the [Modern Treasury API](https://docs.moderntreasury.com/reference), written in Kotlin. Backed by AsyncHTTPClient,
+the requests made by moderntreasury-client are non-blocking. So far, this implementation covers most of the endpoints for
+working with ModernTreasury's ledger API. Pull requests to implement other endpoints are welcome!
 
-## Technologies
-**Languages:** Kotlin  
-**Runtime version:** Kotlin 1.4
+# Contributing
+We welcome contributions from everyone! See [CONTRIBUTING.md](CONTRIBUTING.md) for information on making a contribution.
 
-### Usage
+# Usage
+
+## Setup
+Instantiate an `AsyncModernTreasuryClient` by calling the static `asyncModernTreasuryClient()` function with a config object. You should use
+a single instance of `ModernTreasuryClient` for your entire application's lifecycle.
+
 ## Authenticating
 To authenticate with Modern Treasury, provide the client with your api key's Organization Id and Secret.
 
-## Setup
-Instantiate an `AsyncModernTreasuryClient` by calling the static `asyncModernTreasuryClient()` function with a config object. You should use 
-a single instance of `ModernTreasuryClient` for your entire application's lifecycle.
+# Development
 
-### Testing
+## Testing
 To run all tests, execute:
 ```
 ./gradlew test
 ```
 
-#### Live Tests
+## Live Tests
 This project also contains a suite of tests that make requests against the real Modern Treasury api. These tests are
 skipped by default to decouple our CI builds from Modern Treasury itself but you can (and should) run them yourself like
 this:
@@ -29,12 +32,14 @@ this:
 2. fill in your organization id and api key values in `live-test/src/test/resources/live-tests.properties`
 3. run the tests with `./gradlew test -PliveTests`
 
-## Creating a release
-Merge your changes to main. Checkout the latest main locally.
-Make a tag: `git tag -am "1.0.3" 1.0.3`
-Push the tag: `git push --tags`
+## ModernTreasuryFake
 
-## Ownership
-**Squad:** Plans And Payments  
-**Slack:** [squad-plans-payments](https://classpass.slack.com/archives/CFW7SMMQF)  
-**Jira:** [FIN Jira project](https://classpass.atlassian.net/jira/software/c/projects/FIN/issues/)  
+
+## Formatting
+`./gradlew check` will check code formatting, and `./gradlew formatKotlin` will autoformat the code.
+
+## License headers
+The `./gradlew check` task will ensure that license headers are properly applied, and `./gradlew licenseFormat` will apply headers for you.
+
+# License
+See [LICENSE](LICENSE) for the project license.

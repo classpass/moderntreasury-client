@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 val deps: Map<String, String> by extra
 plugins {
     id("com.github.johnrengelman.shadow") version "5.0.0"
@@ -12,10 +14,8 @@ dependencies {
     implementation("com.google.guava:guava:30.1.1-jre")
 }
 
-tasks {
-    shadowJar {
-        archiveBaseName.set("moderntreasury-client")
-    }
+tasks.withType<ShadowJar> {
+    archiveBaseName.set("moderntreasury-client")
 }
 
 apply(plugin = "maven-publish")

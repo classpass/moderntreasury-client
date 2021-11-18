@@ -1,8 +1,8 @@
 # How do I make a contribution?
-[TEMPLATE: Fill out how to make contributions]
+Please fork the repo and submit a PR.
 
 # Where can I go for help?
-[TEMPLATE: Fill out where to go for help]
+Please file an issue.
 
 # Code of Conduct
 You are responsible for treating everyone on the project with respect and courtesy, regardless of their identity. We're all here to make great open source software and doing so requires a community built on trust and mutual respect.
