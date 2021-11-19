@@ -1,9 +1,12 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 plugins {
     kotlin("jvm") version "1.4.32" apply false
     application
     id("org.jmailen.kotlinter") version "3.4.0"
+    id("com.github.hierynomus.license") version "0.16.1" apply false
 }
 
 group = "com.classpass.moderntreasury"
@@ -11,6 +14,7 @@ group = "com.classpass.moderntreasury"
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jmailen.kotlinter")
+    apply(plugin = "com.github.hierynomus.license")
 
     group = "com.classpass.moderntreasury"
     description = "Modern Treasury Client"
@@ -55,20 +59,31 @@ subprojects {
         withSourcesJar()
     }
 
-    tasks.withType<KotlinCompile>() {
-        kotlinOptions.jvmTarget = "11"
+    configure<nl.javadude.gradle.plugins.license.LicenseExtension> {
+        header = rootProject.file("LICENSE-header")
     }
 
-    tasks.test {
-        useJUnitPlatform()
-    }
-}
+    tasks {
+        // enable ${year} substitution in licenseFormat
+        OffsetDateTime.now(ZoneOffset.UTC).let { now ->
+            withType<com.hierynomus.gradle.license.tasks.LicenseFormat> {
+                extra["year"] = now.year.toString()
+            }
+            withType<com.hierynomus.gradle.license.tasks.LicenseCheck> {
+                extra["year"] = now.year.toString()
+            }
+        }
 
-task("sandbox-test", JavaExec::class) {
-    main = "com.classpass.moderntreasury.SandboxTest"
-    classpath = sourceSets["main"].runtimeClasspath
+        withType<KotlinCompile> {
+            kotlinOptions.jvmTarget = "11"
+        }
+
+        test {
+            useJUnitPlatform()
+        }
+    }
 }
 
 application {
-    mainClassName = "MainKt"
+    mainClass.set("MainKt")
 }
