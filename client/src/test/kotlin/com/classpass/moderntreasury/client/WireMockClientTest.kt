@@ -30,7 +30,7 @@ open class WireMockClientTest {
     internal open fun buildClient(): AsyncModernTreasuryClient {
         val baseUrl = "http://localhost:${wireMockServer.port()}"
         val config = ModernTreasuryConfig(ORG_ID, API_KEY, baseUrl)
-        return AsyncModernTreasuryClient.create(config)
+        return AsyncModernTreasuryClient.create(config, DO_NOTHING_RESPONSE_CALLBACK)
     }
 
     @BeforeEach

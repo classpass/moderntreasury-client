@@ -24,7 +24,11 @@ open class ModernTreasuryLiveTest {
                 throw IllegalArgumentException("Live tests must use the test API Key!")
             }
             client =
-                asyncModernTreasuryClient(ModernTreasuryConfig(props.getProperty("orgId"), props.getProperty("apiKey")))
+                asyncModernTreasuryClient(
+                    ModernTreasuryConfig(props.getProperty("orgId"), props.getProperty("apiKey"))
+                ) {
+                    println("In ModernTreasuryLiveTest, rate limit remaining was $it")
+                }
         } catch (e: IOException) {
             throw Exception("Unable to load live-tests.properties", e)
         }
