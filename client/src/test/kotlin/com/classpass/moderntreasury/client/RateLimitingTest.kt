@@ -37,7 +37,13 @@ class RateLimitingTest {
         wireMockServer.start()
         baseUrl = "http://localhost:${wireMockServer.port()}"
         val asyncHttpClient = Dsl.asyncHttpClient()
-        client = AsyncModernTreasuryClient(asyncHttpClient, baseUrl, rateLimiter, rateLimiterTimeoutMs)
+        client = AsyncModernTreasuryClient(
+            asyncHttpClient,
+            baseUrl,
+            rateLimiter,
+            rateLimiterTimeoutMs,
+            DO_NOTHING_RESPONSE_CALLBACK,
+        )
 
         configureFor("localhost", wireMockServer.port())
     }

@@ -40,18 +40,23 @@ import java.util.concurrent.CompletableFuture
 
 /**
  * Create a ModernTreasuryClient backed by an AsyncHttpClient. You should use a single instance of ModernTreasuryClient
- * for your application's entire lifecycle
+ * for your application's entire lifecycle.
  */
-fun asyncModernTreasuryClient(config: ModernTreasuryConfig): ModernTreasuryClient = AsyncModernTreasuryClient.create(config)
+fun asyncModernTreasuryClient(
+    config: ModernTreasuryConfig,
+    responseCallback: ResponseCallback = DO_NOTHING_RESPONSE_CALLBACK
+): ModernTreasuryClient =
+    AsyncModernTreasuryClient.create(config, responseCallback)
 
 internal class AsyncModernTreasuryClient(
     internal val httpClient: AsyncHttpClient,
     private val baseUrl: String,
     private val rateLimiter: RateLimiter,
-    private val rateLimitTimeoutMs: Long
+    private val rateLimitTimeoutMs: Long,
+    private val responseCallback: ResponseCallback,
 ) : ModernTreasuryClient {
     companion object {
-        fun create(config: ModernTreasuryConfig): AsyncModernTreasuryClient {
+        fun create(config: ModernTreasuryConfig, responseCallback: ResponseCallback): AsyncModernTreasuryClient {
             val clientConfig = Dsl.config()
                 .setRealm(Dsl.basicAuthRealm(config.organizationId, config.apiKey).setUsePreemptiveAuth(true))
                 .setConnectTimeout(config.connectTimeoutMs)
@@ -61,7 +66,13 @@ internal class AsyncModernTreasuryClient(
                 .build()
             val asyncHttpClient = Dsl.asyncHttpClient(clientConfig)
             val rateLimiter = RateLimiter.create(config.rateLimit)
-            return AsyncModernTreasuryClient(asyncHttpClient, config.baseUrl, rateLimiter, config.rateLimitTimeoutMs)
+            return AsyncModernTreasuryClient(
+                asyncHttpClient,
+                config.baseUrl,
+                rateLimiter,
+                config.rateLimitTimeoutMs,
+                responseCallback,
+            )
         }
     }
 
@@ -201,6 +212,8 @@ internal class AsyncModernTreasuryClient(
                 throw RateLimitTimeoutException(rateLimitTimeoutMs)
             }
             val response = block.invoke(httpClient).execute().get()
+            val rateLimitRemaining: String? = response.getHeader("X-Rate-Limit-Remaining")
+            rateLimitRemaining?.let { responseCallback.rateLimitRemaining(it.toInt()) }
             if (response.statusCode in 200..299) {
                 response
             } else {

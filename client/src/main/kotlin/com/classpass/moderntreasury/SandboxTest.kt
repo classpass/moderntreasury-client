@@ -3,6 +3,7 @@
 package com.classpass.moderntreasury
 
 import com.classpass.moderntreasury.client.AsyncModernTreasuryClient
+import com.classpass.moderntreasury.client.DO_NOTHING_RESPONSE_CALLBACK
 import com.classpass.moderntreasury.config.ModernTreasuryConfig
 
 /**
@@ -12,7 +13,7 @@ import com.classpass.moderntreasury.config.ModernTreasuryConfig
  */
 fun main(args: Array<String>) {
     val config = ModernTreasuryConfig(args[0], args[1], args[2])
-    AsyncModernTreasuryClient.create(config).use { client ->
+    AsyncModernTreasuryClient.create(config, DO_NOTHING_RESPONSE_CALLBACK).use { client ->
         client.ping().get()
     }
 }
