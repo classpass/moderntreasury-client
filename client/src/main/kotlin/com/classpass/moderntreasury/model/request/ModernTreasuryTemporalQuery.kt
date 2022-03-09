@@ -65,6 +65,10 @@ sealed class ModernTreasuryTemporalQuery<T : Temporal> constructor(
     }.toMap()
 
     internal abstract fun plus(preposition: DatePreposition, temporal: T): ModernTreasuryTemporalQuery<T>
+
+    override fun toString(): String {
+        return this::class.java.simpleName + queryParts.toString().filterNot { it.isWhitespace() }
+    }
 }
 
 internal enum class DatePreposition(val key: String) {
@@ -78,4 +82,8 @@ internal enum class DatePreposition(val key: String) {
 internal class TemporalQueryPart<T : Temporal>(
     val preposition: DatePreposition,
     val temporal: T
-)
+) {
+    override fun toString(): String {
+        return "${preposition.key}=$temporal"
+    }
+}
