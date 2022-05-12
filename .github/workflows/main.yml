@@ -1,0 +1,30 @@
+name: Build and Test
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "README.md"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "README.md"
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        java_version: ['8', '11', '17']
+        os: ['ubuntu-20.04']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: "zulu"
+          java-version: ${{ matrix.java_version }}
+          cache: gradle
+      - name: Build
+        run: ./gradlew check
