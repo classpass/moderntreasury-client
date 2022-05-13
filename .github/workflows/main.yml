@@ -27,4 +27,4 @@ jobs:
           java-version: ${{ matrix.java_version }}
           cache: gradle
       - name: Build
-        run: ./gradlew check
+        run: ./gradlew check --info
