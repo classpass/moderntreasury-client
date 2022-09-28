@@ -100,7 +100,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
     }
 
     @Test
-    fun `When posting already-posted transaction then throws TransactionAlreadyPostedException`() {
+    fun `When posting already-posted transaction then patch has no effect`() {
         val transactionRequest = CreateLedgerTransactionRequest(
             LocalDate.now(),
             listOf(
@@ -114,9 +114,8 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         )
 
         val txn = client.createLedgerTransaction(transactionRequest).get()
-        val thrown =
-            assertFails { client.updateLedgerTransaction(id = txn.id, status = LedgerTransactionStatus.POSTED).get() }
-        assertThat(thrown.cause).isNotNull().isInstanceOf(TransactionAlreadyPostedException::class)
+        val updatedTxn = client.updateLedgerTransaction(id = txn.id, status = LedgerTransactionStatus.POSTED).get()
+        assertEquals(txn, updatedTxn)
     }
 
     @Test
