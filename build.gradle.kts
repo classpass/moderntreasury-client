@@ -3,7 +3,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 plugins {
-    kotlin("jvm") version "1.4.32" apply false
+    kotlin("jvm") version "1.6.21" apply false
     application
     id("org.jmailen.kotlinter") version "3.4.0"
     id("com.github.hierynomus.license") version "0.16.1" apply false
@@ -20,14 +20,7 @@ subprojects {
     description = "Modern Treasury Client"
 
     repositories {
-        maven {
-            url = uri("https://classpassengineering.jfrog.io/classpassengineering/libs-release")
-            credentials {
-                username = project.properties["com.classpass.artifactory.username"].toString()
-                password = project.properties["com.classpass.artifactory.apiKey"].toString()
-            }
-            authentication { create<BasicAuthentication>("basic") }
-        }
+        mavenCentral()
     }
 
     val deps by extra {
@@ -44,7 +37,7 @@ subprojects {
         testImplementation("com.github.tomakehurst", "wiremock", "2.25.1")
         testImplementation(kotlin("test-junit5"))
         testImplementation("org.junit.jupiter:junit-jupiter-api:${deps["junit"]}")
-        testImplementation("org.mockito.kotlin:mockito-kotlin:3.1.0")
+        testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${deps["junit"]}")
         testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.23.1")
 
@@ -54,8 +47,8 @@ subprojects {
     }
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
         withSourcesJar()
     }
 
@@ -75,7 +68,7 @@ subprojects {
         }
 
         withType<KotlinCompile> {
-            kotlinOptions.jvmTarget = "11"
+            kotlinOptions.jvmTarget = "1.8"
         }
 
         test {
