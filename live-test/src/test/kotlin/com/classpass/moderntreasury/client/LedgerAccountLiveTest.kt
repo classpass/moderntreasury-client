@@ -50,7 +50,7 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         ledger = client.createLedger(
             "client_liveTests_${this::class.simpleName}_${System.currentTimeMillis()}",
             null,
-            "usd",
+            "USD",
             nextId()
         ).get()
         ledgerAccount =

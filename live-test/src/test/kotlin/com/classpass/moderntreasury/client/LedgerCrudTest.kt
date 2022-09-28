@@ -24,7 +24,7 @@ class LedgerCrudTest : ModernTreasuryLiveTest() {
         val ledger = client.createLedger(
             "client_liveTests_${this::class.simpleName}_${System.currentTimeMillis()}",
             null,
-            "usd",
+            "USD",
             nextId()
         ).get()
         client.deleteLedger(ledger.id).get()
