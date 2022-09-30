@@ -1,23 +1,40 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.time.Duration
+import java.net.URI
+
 
 plugins {
+    java
     kotlin("jvm") version "1.6.21" apply false
     application
     id("org.jmailen.kotlinter") version "3.4.0"
+    id("org.jetbrains.dokka") version "1.4.32" apply false
     id("com.github.hierynomus.license") version "0.16.1" apply false
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    id("net.researchgate.release") version "2.8.1"
 }
 
-group = "com.classpass.moderntreasury"
+group = "com.classpass.oss.moderntreasury"
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jmailen.kotlinter")
     apply(plugin = "com.github.hierynomus.license")
+    apply(plugin = "maven-publish")
+    apply(plugin = "signing")
+    apply(plugin = "org.jetbrains.dokka")
 
-    group = "com.classpass.moderntreasury"
+    group = "com.classpass.oss.moderntreasury"
     description = "Modern Treasury Client"
+
+    tasks {
+        register<Jar>("docJar") {
+            from(project.tasks["dokkaHtml"])
+            archiveClassifier.set("javadoc")
+        }
+    }
 
     repositories {
         mavenCentral()
@@ -75,6 +92,75 @@ subprojects {
             useJUnitPlatform()
         }
     }
+
+    configure<PublishingExtension> {
+        publications {
+            register<MavenPublication>("sonatype") {
+                from(components["java"])
+                artifact(tasks["docJar"])
+                // sonatype required pom elements
+                pom {
+                    name.set("${project.group}:${project.name}")
+                    description.set(name)
+                    url.set("https://github.com/classpass/moderntreasury-client")
+                    licenses {
+                        license {
+                            name.set("Apache License, Version 2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0.html")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("jstafford406")
+                            name.set("Jon Stafford")
+                            email.set("38865369+jstafford406@users.noreply.github.com")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:https://github.com/classpass/moderntreasury-client")
+                        developerConnection.set("scm:git:https://github.com/classpass/moderntreasury-client.git")
+                        url.set("https://github.com/classpass/moderntreasury-client")
+                    }
+                }
+            }
+        }
+
+        // A safe throw-away place to publish to:
+        // ./gradlew publishSonatypePublicationToLocalDebugRepository -Pversion=foo
+        repositories {
+            maven {
+                name = "localDebug"
+                url = URI.create("file:///${project.buildDir}/repos/localDebug")
+            }
+        }
+    }
+
+    // don't barf for devs without signing set up
+    if (project.hasProperty("signing.keyId")) {
+        configure<SigningExtension> {
+            sign(project.extensions.getByType<PublishingExtension>().publications["sonatype"])
+        }
+    }
+
+    // releasing should publish
+    rootProject.tasks.afterReleaseBuild {
+        dependsOn(provider { project.tasks.named("publishToSonatype") })
+    }
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            // sonatypeUsername and sonatypePassword properties are used automatically
+            stagingProfileId.set("1f02cf06b7d4cd") // com.classpass.oss
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+        }
+    }
+    // these are not strictly required. The default timeouts are set to 1 minute. But Sonatype can be really slow.
+    // If you get the error "java.net.SocketTimeoutException: timeout", these lines will help.
+    connectTimeout.set(Duration.ofMinutes(3))
+    clientTimeout.set(Duration.ofMinutes(3))
 }
 
 application {

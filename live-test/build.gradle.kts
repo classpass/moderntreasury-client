@@ -1,4 +1,4 @@
-group = "com.classpass.moderntreasury"
+group = "com.classpass.oss.moderntreasury"
 
 tasks.withType<Test> {
     onlyIf {
