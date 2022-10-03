@@ -142,10 +142,11 @@ subprojects {
         }
     }
 
-    // releasing should publish
-    rootProject.tasks.afterReleaseBuild {
-        dependsOn(provider { project.tasks.named("publishToSonatype") })
-    }
+}
+
+// releasing should publish
+rootProject.tasks.afterReleaseBuild {
+    dependsOn(provider { project.tasks.named("publishToSonatype") })
 }
 
 nexusPublishing {
