@@ -17,25 +17,3 @@ dependencies {
 tasks.withType<ShadowJar> {
     archiveBaseName.set("moderntreasury-client")
 }
-
-apply(plugin = "maven-publish")
-configure<PublishingExtension> {
-    findProperty("com.classpass.jenkins.localRepo")?.toString()?.let { localRepoPath ->
-        publications {
-            create<MavenPublication>("mavenJava") {
-                // Give the resulting artifact a name that won't conflict with other projects
-                artifactId = "modern-treasury-client"
-
-                from(components["java"])
-            }
-        }
-
-        // if we're publishing artifacts, add the repo to write to
-        repositories {
-            maven {
-                name = "jenkinsLocal"
-                url = uri(localRepoPath)
-            }
-        }
-    }
-}
