@@ -172,6 +172,6 @@ application {
 release {
     // work around lack of proper kotlin DSL support
     (getProperty("git") as net.researchgate.release.GitAdapter.GitConfig).apply {
-        requireBranch = "js/relpub"
+        requireBranch = "main"
     }
 }
