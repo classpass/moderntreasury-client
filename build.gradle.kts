@@ -142,12 +142,12 @@ subprojects {
         }
     }
 
+    // releasing should publish
+    rootProject.tasks.afterReleaseBuild {
+        dependsOn(provider { project.tasks.named("publishToSonatype") })
+    }
 }
 
-// releasing should publish
-rootProject.tasks.afterReleaseBuild {
-    dependsOn(provider { project.tasks.named("publishToSonatype") })
-}
 
 nexusPublishing {
     repositories {
@@ -171,6 +171,6 @@ application {
 release {
     // work around lack of proper kotlin DSL support
     (getProperty("git") as net.researchgate.release.GitAdapter.GitConfig).apply {
-        requireBranch = "main"
+        requireBranch = "js/relpub"
     }
 }
