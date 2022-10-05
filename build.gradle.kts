@@ -143,8 +143,9 @@ subprojects {
     }
 
     // releasing should publish
+    val provider = provider { project.tasks.named("publishToSonatype") }
     rootProject.tasks.afterReleaseBuild {
-        dependsOn(provider { project.tasks.named("publishToSonatype") })
+        dependsOn(provider)
     }
 }
 
