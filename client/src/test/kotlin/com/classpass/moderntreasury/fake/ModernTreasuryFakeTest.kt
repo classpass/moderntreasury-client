@@ -26,6 +26,7 @@ import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictExcept
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerEntryDirection
+import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.DateQuery
@@ -103,13 +104,12 @@ class ModernTreasuryFakeTest {
     }
 
     @Test
-    fun `getLedgerAccoutns paginates correctly`() {
+    fun `getLedgerAccounts paginates correctly`() {
         // We're overriding perPage here to 2 so that we don't have to generate hundreds of rows of fake data to query for this test
-        val page = client.getLedgerAccounts(listOf(us_venue.id, can_cash.id, usd_cogs.id), null, page = 1, perPage = 2).get()
+        val page = client.getLedgerAccounts(listOf(us_venue.id, can_cash.id, usd_cogs.id), null, afterCursor = null, perPage = 2).get()
         assertThat(page.content).isEqualTo(listOf(us_venue, can_cash))
-        assertThat(page.page).isEqualTo(1)
+        assertThat(page.afterCursor).isEqualTo(can_cash.id.toString())
         assertThat(page.perPage).isEqualTo(2)
-        assertThat(page.totalCount).isEqualTo(3)
     }
 
     @Test
@@ -294,7 +294,7 @@ class ModernTreasuryFakeTest {
     }
 
     @Test
-    fun `fetchAllPages fetches all pages`() {
+    fun `fake fetchAllPages fetches all pages`() {
         val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id)
         val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, usd_cogs.id)
 
@@ -309,10 +309,10 @@ class ModernTreasuryFakeTest {
             ).get()
         }
 
-        val result = client.fetchAllPages({ page, perPage ->
+        val result = client.fetchAllPages({ afterCursor, perPage ->
             getLedgerTransactions(
                 ledgerAccountId = usd_cash.id,
-                page = page,
+                afterCursor = afterCursor?.let { LedgerTransactionId(it) },
                 perPage = perPage
             )
         }).get()
@@ -333,10 +333,10 @@ class ModernTreasuryFakeTest {
             "",
         ).get()
 
-        val result = client.fetchAllPages({ page, perPage ->
+        val result = client.fetchAllPages({ afterCursor, perPage ->
             getLedgerTransactions(
                 ledgerAccountId = usd_cash.id,
-                page = page,
+                afterCursor = afterCursor?.let { LedgerTransactionId(it) },
                 perPage = perPage
             )
         }).get()
@@ -345,10 +345,10 @@ class ModernTreasuryFakeTest {
 
     @Test
     fun `fetchAllPages works on empty result set`() {
-        val result = client.fetchAllPages({ page, perPage ->
+        val result = client.fetchAllPages({ afterCursor, perPage ->
             getLedgerTransactions(
                 ledgerAccountId = usd_cash.id,
-                page = page,
+                afterCursor = afterCursor?.let { LedgerTransactionId(it) },
                 perPage = perPage
             )
         }).get()

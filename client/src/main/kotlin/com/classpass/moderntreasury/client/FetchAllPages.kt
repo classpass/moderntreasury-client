@@ -17,7 +17,6 @@ package com.classpass.moderntreasury.client
 
 import com.classpass.moderntreasury.model.ModernTreasuryPage
 import java.util.concurrent.CompletableFuture
-import kotlin.math.ceil
 
 /**
  * This is the largest page size the ModernTreasury API will allow
@@ -29,17 +28,20 @@ private const val PER_PAGE_MAX = 100
  * comprising the content of all the pages concatenated
  *
  * Example usage:
- * mtClient.fetchAllPages { page, perPage -> getLedgerTransactions(ledgerId, null, page = page, perPage = perPage) }
+ * mtClient.fetchAllPages { afterCursor, perPage -> getLedgerTransactions(ledgerId, null, afterCursor = afterCursor?.let { LedgerTransactionId(it) }, perPage = perPage) }
  */
 fun <T> ModernTreasuryClient.fetchAllPages(
-    fetchPage: ModernTreasuryClient.(paginatedFnPage: Int, paginatedFnPerPage: Int) -> CompletableFuture<ModernTreasuryPage<T>>,
+    fetchPage: ModernTreasuryClient.(paginatedFnAfterCursor: String?, paginatedFnPerPage: Int) -> CompletableFuture<ModernTreasuryPage<T>>,
     perPage: Int = PER_PAGE_MAX
-): CompletableFuture<List<T>> =
-    fetchPage(1, perPage).thenApply { pageOne ->
-        val totalPages = ceil(pageOne.totalCount / pageOne.perPage.toDouble()).toInt()
-        val remainingPages = (2..totalPages).map { pageNumber ->
-            fetchPage(pageNumber, perPage)
-        }
-        val pageFutures = listOf(CompletableFuture.completedFuture(pageOne)).plus(remainingPages)
-        pageFutures.flatMap { it.join().content }
-    }
+): CompletableFuture<List<T>> {
+
+    val results: MutableList<T> = mutableListOf()
+    var afterCursor: String? = null
+    do {
+        val aPage = fetchPage(afterCursor, perPage).get()
+        results.addAll(aPage.content)
+        afterCursor = aPage.afterCursor
+    } while (afterCursor != null)
+
+    return CompletableFuture.completedFuture(results)
+}

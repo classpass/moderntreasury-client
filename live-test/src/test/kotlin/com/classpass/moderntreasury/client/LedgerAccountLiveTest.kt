@@ -36,6 +36,7 @@ import org.junit.jupiter.api.TestInstance
 import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertTrue
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
@@ -93,7 +94,6 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
         val transactionList = client.getLedgerTransactions(ledger.id, null, metadata).get()
 
         assertThat(queriedTransaction).isEqualTo(transaction)
-        assertThat(transactionList.totalCount).isEqualTo(1)
         assertThat(transactionList.content[0]).isEqualTo(transaction)
 
         client.updateLedgerTransaction(transaction.id, null, LedgerTransactionStatus.POSTED).get()
@@ -248,15 +248,21 @@ class LedgerAccountLiveTest : ModernTreasuryLiveTest() {
 
         val response = client.getLedgerAccounts(
             ledgerAccountIds = listOf(account1.id, account2.id),
-            page = 2,
+            afterCursor = null,
             perPage = 1
         ).get()
 
         assertEquals(1, response.content.size)
-        assertEquals(2, response.page)
         assertEquals(1, response.perPage)
-        assertEquals(2, response.totalCount)
-        assertEquals(account1.id, response.content[0].id)
+
+        // This is gross, but let's embrace the fact that there's no specified order the ledger accounts are returned in
+        assertTrue(
+            // account1 was the account arbitrarily returned
+            (account1.id == response.content[0].id && account1.id.toString() == response.afterCursor)
+                xor
+                    // account2 was the account arbitrarily returned
+                (account2.id == response.content[0].id && account2.id.toString() == response.afterCursor)
+        )
     }
 
     @Test
