@@ -119,6 +119,7 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
 
     @Test
     fun `test paginated response deserialization`() {
+        val transactionId = UUID.randomUUID().toString()
         stubFor(
             get(anyUrl()).willReturn(
                 ledgerTransactionsListResponse(
@@ -127,16 +128,14 @@ class AsyncModernTreasuryClientTest : WireMockClientTest() {
                     UUID.randomUUID(),
                     UUID.randomUUID()
                 )
-                    .withHeader("x-page", "1")
+                    .withHeader("x-after-cursor", transactionId)
                     .withHeader("x-per-page", "3")
-                    .withHeader("x-total-count", "40")
             )
         )
 
         val result = client.getLedgerTransactions(LedgerId(UUID.randomUUID())).get()
-        assertThat(result.page).isEqualTo(1)
+        assertThat(result.afterCursor).isEqualTo(transactionId)
         assertThat(result.perPage).isEqualTo(3)
-        assertThat(result.totalCount).isEqualTo(40)
         assertThat(result.content).hasSize(3)
         assertThat(result.content[0]).isInstanceOf(LedgerTransaction::class)
     }

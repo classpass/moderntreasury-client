@@ -55,7 +55,7 @@ class FetchAllPagesLiveTest : ModernTreasuryLiveTest() {
     }
 
     @Test
-    fun `fetchAllPages fetches all pages`() {
+    fun `live fetchAllPages fetches all pages`() {
         val transactions = List(5) { idx ->
             client.createLedgerTransaction(
                 LocalDate.now(),
@@ -70,10 +70,10 @@ class FetchAllPagesLiveTest : ModernTreasuryLiveTest() {
             )
         }.map { it.get() }
 
-        val actual = client.fetchAllPages({ page, perPage ->
+        val actual = client.fetchAllPages({ afterCursor, perPage ->
             getLedgerTransactions(
                 ledgerAccountId = ledgerAccount.id,
-                page = page,
+                afterCursor = afterCursor,
                 perPage = 1
             )
         }).get()
