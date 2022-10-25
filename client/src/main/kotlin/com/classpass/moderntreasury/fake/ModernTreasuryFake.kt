@@ -97,7 +97,7 @@ open class ModernTreasuryFake :
     override fun getLedgerAccounts(
         ledgerAccountIds: List<LedgerAccountId>,
         balancesAsOfDate: LocalDate?,
-        afterCursor: LedgerAccountId?,
+        afterCursor: String?,
         perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerAccount>> = supplyAsync {
         // Create a local copy of ledger account info with computed balance. Does not mutate shared.
@@ -105,11 +105,11 @@ open class ModernTreasuryFake :
             accounts[it]?.copy(balances = getBalances(it, asOfDate = balancesAsOfDate))
         }
 
-        val accountsAfterCursor = accounts.takeLastWhile { afterCursor != it.id }
+        val accountsAfterCursor = accounts.takeLastWhile { afterCursor != it.id.toString() }
 
         val content = accountsAfterCursor.take(perPage)
         val nextAfterCursor =
-            if (accountsAfterCursor.size <= perPage) null else content.lastOrNull()?.id.toString()
+            if (accountsAfterCursor.isEmpty()) null else content.lastOrNull()?.id.toString()
 
         val modernTreasuryPageInfo = object : ModernTreasuryPageInfo {
             override val afterCursor: String? = nextAfterCursor
@@ -164,7 +164,7 @@ open class ModernTreasuryFake :
         effectiveDate: DateQuery?,
         postedAt: InstantQuery?,
         updatedAt: InstantQuery?,
-        afterCursor: LedgerTransactionId?,
+        afterCursor: String?,
         perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val filteredTransactions = transactions
@@ -180,11 +180,11 @@ open class ModernTreasuryFake :
             }
             .filter { ledgerAccountId == null || it.ledgerEntries.map { entry -> entry.ledgerAccountId }.contains(ledgerAccountId) }
 
-        val transactionsAfterCursor = filteredTransactions.takeLastWhile { afterCursor != it.id }
+        val transactionsAfterCursor = filteredTransactions.takeLastWhile { afterCursor != it.id.toString() }
 
         val pageContent = transactionsAfterCursor.take(perPage)
         val nextAfterCursor =
-            if (transactionsAfterCursor.size <= perPage) null else pageContent.lastOrNull()?.id.toString()
+            if (transactionsAfterCursor.isEmpty()) null else pageContent.lastOrNull()?.id.toString()
 
         val modernTreasuryPageInfo = object : ModernTreasuryPageInfo {
             override val afterCursor: String? = nextAfterCursor

@@ -28,7 +28,7 @@ private const val PER_PAGE_MAX = 100
  * comprising the content of all the pages concatenated
  *
  * Example usage:
- * mtClient.fetchAllPages { afterCursor, perPage -> getLedgerTransactions(ledgerId, null, afterCursor = afterCursor?.let { LedgerTransactionId(it) }, perPage = perPage) }
+ * mtClient.fetchAllPages { afterCursor, perPage -> getLedgerTransactions(ledgerId, null, afterCursor = afterCursor, perPage = perPage) }
  */
 fun <T> ModernTreasuryClient.fetchAllPages(
     fetchPage: ModernTreasuryClient.(paginatedFnAfterCursor: String?, paginatedFnPerPage: Int) -> CompletableFuture<ModernTreasuryPage<T>>,

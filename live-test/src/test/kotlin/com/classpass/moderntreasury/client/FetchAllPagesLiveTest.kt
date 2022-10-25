@@ -21,7 +21,6 @@ import com.classpass.moderntreasury.ModernTreasuryLiveTest
 import com.classpass.moderntreasury.model.Ledger
 import com.classpass.moderntreasury.model.LedgerAccount
 import com.classpass.moderntreasury.model.LedgerEntryDirection
-import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.RequestLedgerEntry
@@ -74,7 +73,7 @@ class FetchAllPagesLiveTest : ModernTreasuryLiveTest() {
         val actual = client.fetchAllPages({ afterCursor, perPage ->
             getLedgerTransactions(
                 ledgerAccountId = ledgerAccount.id,
-                afterCursor = afterCursor?.let { LedgerTransactionId(it) },
+                afterCursor = afterCursor,
                 perPage = 1
             )
         }).get()

@@ -26,7 +26,6 @@ import com.classpass.moderntreasury.exception.LedgerAccountVersionConflictExcept
 import com.classpass.moderntreasury.exception.ModernTreasuryApiException
 import com.classpass.moderntreasury.model.LedgerAccountId
 import com.classpass.moderntreasury.model.LedgerEntryDirection
-import com.classpass.moderntreasury.model.LedgerTransactionId
 import com.classpass.moderntreasury.model.LedgerTransactionStatus
 import com.classpass.moderntreasury.model.NormalBalanceType
 import com.classpass.moderntreasury.model.request.DateQuery
@@ -312,7 +311,7 @@ class ModernTreasuryFakeTest {
         val result = client.fetchAllPages({ afterCursor, perPage ->
             getLedgerTransactions(
                 ledgerAccountId = usd_cash.id,
-                afterCursor = afterCursor?.let { LedgerTransactionId(it) },
+                afterCursor = afterCursor,
                 perPage = perPage
             )
         }).get()
@@ -336,7 +335,7 @@ class ModernTreasuryFakeTest {
         val result = client.fetchAllPages({ afterCursor, perPage ->
             getLedgerTransactions(
                 ledgerAccountId = usd_cash.id,
-                afterCursor = afterCursor?.let { LedgerTransactionId(it) },
+                afterCursor = afterCursor,
                 perPage = perPage
             )
         }).get()
@@ -348,7 +347,7 @@ class ModernTreasuryFakeTest {
         val result = client.fetchAllPages({ afterCursor, perPage ->
             getLedgerTransactions(
                 ledgerAccountId = usd_cash.id,
-                afterCursor = afterCursor?.let { LedgerTransactionId(it) },
+                afterCursor = afterCursor,
                 perPage = perPage
             )
         }).get()

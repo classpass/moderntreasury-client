@@ -117,14 +117,14 @@ internal class AsyncModernTreasuryClient(
     override fun getLedgerAccounts(
         ledgerAccountIds: List<LedgerAccountId>,
         balancesAsOfDate: LocalDate?,
-        afterCursor: LedgerAccountId?,
+        afterCursor: String?,
         perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerAccount>> {
         val queryParams = mapOf(
             "balances[as_of_date]" to listOfNotNull(balancesAsOfDate?.toString()),
             "id[]" to ledgerAccountIds.map { it.toString() },
             "per_page" to listOf(perPage.toString())
-        ).plus(afterCursor?.let { mapOf("after_cursor" to listOf(afterCursor.toString())) } ?: emptyMap())
+        ).plus(afterCursor?.let { mapOf("after_cursor" to listOf(afterCursor)) } ?: emptyMap())
         return getPaginated("/ledger_accounts", queryParams)
     }
 
@@ -138,14 +138,14 @@ internal class AsyncModernTreasuryClient(
         effectiveDate: DateQuery?,
         postedAt: InstantQuery?,
         updatedAt: InstantQuery?,
-        afterCursor: LedgerTransactionId?,
+        afterCursor: String?,
         perPage: Int
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>> {
         val queryParams = mapOf(
             "ledger_id" to listOfNotNull(ledgerId?.toString()),
             "ledger_account_id" to listOfNotNull(ledgerAccountId?.toString()),
             "per_page" to listOf(perPage.toString())
-        ).plus(afterCursor?.let { mapOf("after_cursor" to listOf(afterCursor.toString())) } ?: emptyMap())
+        ).plus(afterCursor?.let { mapOf("after_cursor" to listOf(afterCursor)) } ?: emptyMap())
             .plus(effectiveDate?.toQueryParams("effective_date") ?: emptyMap())
             .plus(postedAt?.toQueryParams("posted_at") ?: emptyMap())
             .plus(updatedAt?.toQueryParams("updated_at") ?: emptyMap())

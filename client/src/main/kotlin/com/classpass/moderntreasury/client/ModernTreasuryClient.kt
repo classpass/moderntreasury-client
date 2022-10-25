@@ -72,7 +72,7 @@ interface ModernTreasuryClient : Closeable {
          * The date of the balance in local time. Defaults to today's date.
          */
         balancesAsOfDate: LocalDate? = null,
-        afterCursor: LedgerAccountId? = null,
+        afterCursor: String? = null,
         perPage: Int = 25
     ): CompletableFuture<ModernTreasuryPage<LedgerAccount>>
 
@@ -96,7 +96,7 @@ interface ModernTreasuryClient : Closeable {
         effectiveDate: DateQuery? = null,
         postedAt: InstantQuery? = null,
         updatedAt: InstantQuery? = null,
-        afterCursor: LedgerTransactionId? = null,
+        afterCursor: String? = null,
         perPage: Int = 25
     ): CompletableFuture<ModernTreasuryPage<LedgerTransaction>>
 
