@@ -40,22 +40,16 @@ subprojects {
         mavenCentral()
     }
 
-    val deps by extra {
-        mapOf(
-            "jackson" to "2.12.2",
-            "junit" to "5.7.1"
-        )
-    }
 
     dependencies {
-        testImplementation("org.junit.jupiter:junit-jupiter-api:${deps["junit"]}")
-        testImplementation("org.junit.jupiter:junit-jupiter-params:${deps["junit"]}")
-        testImplementation("org.junit.jupiter:junit-jupiter-engine:${deps["junit"]}")
-        testImplementation("com.github.tomakehurst", "wiremock", "2.25.1")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
+        testImplementation("org.junit.jupiter:junit-jupiter-params:5.7.1")
+        testImplementation("org.junit.jupiter:junit-jupiter-engine:5.7.1")
+        testImplementation("com.github.tomakehurst:wiremock:2.25.1")
         testImplementation(kotlin("test-junit5"))
-        testImplementation("org.junit.jupiter:junit-jupiter-api:${deps["junit"]}")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
         testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
-        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${deps["junit"]}")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.1")
         testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.23.1")
 
         implementation("org.slf4j:slf4j-api:1.7.30")
