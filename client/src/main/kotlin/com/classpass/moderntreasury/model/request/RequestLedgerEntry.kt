@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 ClassPass
+ * Copyright 2024 ClassPass
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ data class RequestLedgerEntry(
     val amount: Long,
     val direction: LedgerEntryDirection,
     val ledgerAccountId: LedgerAccountId,
+    val metadata: RequestMetadata = emptyMap(),
     /**
      * an integer that is incremented every time a transaction is posted to the account. When the client is creating a
      * account. When the client is creating a ledger transaction and wants to assert that the ledger account's state

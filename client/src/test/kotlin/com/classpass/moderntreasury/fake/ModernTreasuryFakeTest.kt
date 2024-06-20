@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 ClassPass
+ * Copyright 2024 ClassPass
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -232,22 +232,32 @@ class ModernTreasuryFakeTest {
 
     @Test
     fun `Supports lockVersion`() {
-        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, 0)
-        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, 0)
+        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, lockVersion = 0)
+        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, lockVersion = 0)
         client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED)
 
         val cashVersion = client.getLedgerAccount(usd_cash.id).get()
         val venueVersion = client.getLedgerAccount(us_venue.id).get()
 
-        val debit2 = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, lockVersion = cashVersion.lockVersion)
-        val credit2 = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, lockVersion = venueVersion.lockVersion)
+        val debit2 = RequestLedgerEntry(
+            100,
+            LedgerEntryDirection.DEBIT,
+            usd_cash.id,
+            lockVersion = cashVersion.lockVersion
+        )
+        val credit2 = RequestLedgerEntry(
+            100,
+            LedgerEntryDirection.CREDIT,
+            us_venue.id,
+            lockVersion = venueVersion.lockVersion
+        )
         client.createLedgerTransaction(debit2, credit2, status = LedgerTransactionStatus.POSTED)
     }
 
     @Test
     fun `An exception is thrown when creating a transaction with an outdated lock version`() {
-        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, 0)
-        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, 0)
+        val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, lockVersion = 0)
+        val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, lockVersion = 0)
 
         // Will succeed because the lockVersion matches
         client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED)
@@ -358,8 +368,8 @@ class ModernTreasuryFakeTest {
     inner class FakeSpecificMethods {
         @Test
         fun `Can clearAllTestTransactions`() {
-            val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, 0)
-            val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, 0)
+            val debit = RequestLedgerEntry(100, LedgerEntryDirection.DEBIT, usd_cash.id, lockVersion = 0)
+            val credit = RequestLedgerEntry(100, LedgerEntryDirection.CREDIT, us_venue.id, lockVersion = 0)
             client.createLedgerTransaction(debit, credit, status = LedgerTransactionStatus.POSTED)
 
             client.clearAllTestTransactions()
