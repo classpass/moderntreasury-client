@@ -65,7 +65,10 @@ class LedgerTransactionTests : WireMockClientTest() {
                     amount = 6,
                     direction = LedgerEntryDirection.CREDIT,
                     ledgerAccountId = ledgerAccountId,
-                    lockVersion = null
+                    lockVersion = null,
+                    metadata = mapOf(
+                        "entryKey" to "entryValue"
+                    )
                 ),
             ),
             postedAt = ZonedDateTime.of(2020, 10, 20, 19, 11, 7, 0, ZoneOffset.UTC).toInstant(),

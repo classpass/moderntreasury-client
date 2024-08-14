@@ -154,7 +154,10 @@ open class WireMockClientTest {
               "ledger_transaction_id": "$id",
               "discarded_at": null,
               "created_at": "2021-05-04T21:44:08Z",
-              "updated_at": "2021-05-04T21:44:08Z"
+              "updated_at": "2021-05-04T21:44:08Z",
+              "metadata": {
+                "entryKey": "entryValue"
+              }
             }
           ],
           "posted_at": "2020-10-20T19:11:07Z",
