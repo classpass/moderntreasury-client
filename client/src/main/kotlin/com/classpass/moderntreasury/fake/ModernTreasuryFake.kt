@@ -351,7 +351,10 @@ private fun CreateLedgerRequest.reify(id: LedgerId) =
     Ledger(id, name, description, currency, metadata.filterNonNullValues(), LIVEMODE)
 
 private fun RequestLedgerEntry.reify(id: LedgerEntryId) =
-    LedgerEntry(id, ledgerAccountId, direction, amount, lockVersion, LIVEMODE)
+    LedgerEntry(id, ledgerAccountId, direction, amount, lockVersion, LIVEMODE, metadata.reify())
+
+private fun RequestMetadata?.reify(): Map<String, String> =
+    this?.filterNonNullValues() ?: emptyMap()
 
 /**
  * Ensure a list of ledger entries in a transaction is valid by requiring the credit balance to equal the debit balance
