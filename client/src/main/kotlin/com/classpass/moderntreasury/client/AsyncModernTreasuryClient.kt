@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 ClassPass
+ * Copyright 2025 ClassPass
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
+import com.fasterxml.jackson.module.kotlin.kotlinModule
 import com.google.common.util.concurrent.RateLimiter
 import org.asynchttpclient.AsyncHttpClient
 import org.asynchttpclient.BoundRequestBuilder
@@ -92,7 +92,7 @@ internal class AsyncModernTreasuryClient(
     }
 
     private val objectMapper: ObjectMapper = JsonMapper.builder()
-        .addModules(KotlinModule(), JavaTimeModule())
+        .addModules(kotlinModule(), JavaTimeModule())
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true)
         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
