@@ -1,3 +1,7 @@
+# 🚨 Archived Project
+This project is no longer maintained. No further updates or support will be provided.
+Use the Kotlin SDK now provided by Modern Treasury https://github.com/Modern-Treasury/modern-treasury-kotlin
+
 # Overview
 
 This is a JVM client for the [Modern Treasury API](https://docs.moderntreasury.com/reference), written in Kotlin. Backed by AsyncHTTPClient,
