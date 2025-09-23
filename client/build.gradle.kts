@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val deps: Map<String, String> by extra
 plugins {
-    id("com.github.johnrengelman.shadow") version "5.0.0"
+    id("com.gradleup.shadow") version "8.3.9"
 }
 
 dependencies {
